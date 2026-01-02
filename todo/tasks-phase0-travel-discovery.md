@@ -332,9 +332,6 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ### Phase 0 — Travel Discovery Orchestrator
 
-- [ ] **0.0 Create feature branch**
-  - [ ] 0.1 Create and checkout a new branch for this feature: `git checkout -b feature/phase0-travel-discovery`
-
 ---
 
 - [ ] **1.0 Project Foundation & Configuration**
