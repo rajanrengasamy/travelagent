@@ -334,48 +334,48 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
-- [ ] **1.0 Project Foundation & Configuration**
-  - [ ] 1.1 Initialize Node.js project with `npm init` and set `"type": "module"` for ES modules
-  - [ ] 1.2 Install TypeScript and configure `tsconfig.json` with strict mode, ES2022 target, and Node16 module resolution
-  - [ ] 1.3 Install core dependencies: `zod` (schema validation), `dotenv` (env vars), `chalk` (CLI colors), `ora` (spinners)
-  - [ ] 1.4 Install dev dependencies: `typescript`, `@types/node`, `jest`, `ts-jest`, `@types/jest`, `eslint`, `prettier`
-  - [ ] 1.5 Configure ESLint with TypeScript support and Prettier integration
-  - [ ] 1.6 Create directory structure: `src/`, `src/config/`, `src/schemas/`, `src/storage/`, `src/pipeline/`, `src/workers/`, `src/stages/`, `src/cli/`, `tests/`
-  - [ ] 1.7 Create `.env.example` with all required environment variables documented
-  - [ ] 1.8 Create `src/config/index.ts` with environment variable loading and validation
-  - [ ] 1.9 Create `src/config/models.ts` with model configuration per task (see PRD Section 9.1)
-  - [ ] 1.10 Create `src/config/costs.ts` with token cost constants per provider (see PRD Section 9.3)
-  - [ ] 1.11 Set up Jest configuration in `jest.config.js` for TypeScript
-  - [ ] 1.12 Add npm scripts: `build`, `test`, `lint`, `format`, `dev`
-  - [ ] 1.13 Create `.gitignore` with node_modules, dist, .env, and data directory exclusions
+- [x] **1.0 Project Foundation & Configuration**
+  - [x] 1.1 Initialize Node.js project with `npm init` and set `"type": "module"` for ES modules
+  - [x] 1.2 Install TypeScript and configure `tsconfig.json` with strict mode, ES2022 target, and Node16 module resolution
+  - [x] 1.3 Install core dependencies: `zod` (schema validation), `dotenv` (env vars), `chalk` (CLI colors), `ora` (spinners)
+  - [x] 1.4 Install dev dependencies: `typescript`, `@types/node`, `jest`, `ts-jest`, `@types/jest`, `eslint`, `prettier`
+  - [x] 1.5 Configure ESLint with TypeScript support and Prettier integration
+  - [x] 1.6 Create directory structure: `src/`, `src/config/`, `src/schemas/`, `src/storage/`, `src/pipeline/`, `src/workers/`, `src/stages/`, `src/cli/`, `tests/`
+  - [x] 1.7 Create `.env.example` with all required environment variables documented
+  - [x] 1.8 Create `src/config/index.ts` with environment variable loading and validation
+  - [x] 1.9 Create `src/config/models.ts` with model configuration per task (see PRD Section 9.1)
+  - [x] 1.10 Create `src/config/costs.ts` with token cost constants per provider (see PRD Section 9.3)
+  - [x] 1.11 Set up Jest configuration in `jest.config.js` for TypeScript
+  - [x] 1.12 Add npm scripts: `build`, `test`, `lint`, `format`, `dev`
+  - [x] 1.13 Create `.gitignore` with node_modules, dist, .env, and data directory exclusions
 
 ---
 
-- [ ] **2.0 Schema Definitions & Versioning System**
-  - [ ] 2.1 Create `src/schemas/versions.ts` with SCHEMA_VERSIONS constant for all schema types (see PRD Section 12.2)
-  - [ ] 2.2 Create `src/schemas/common.ts` with shared types:
-    - [ ] 2.2.1 Define `Flexibility` type (none | plusMinusDays | monthOnly)
-    - [ ] 2.2.2 Define `SourceRef` type (url, publisher, retrievedAt, snippet)
-    - [ ] 2.2.3 Define `ValidationStatus` type (verified | partially_verified | conflict_detected | unverified | not_applicable)
-    - [ ] 2.2.4 Define `CandidateType` type (place | activity | neighborhood | daytrip | experience | food)
-    - [ ] 2.2.5 Define `CandidateOrigin` type (web | places | youtube)
-    - [ ] 2.2.6 Define `CandidateConfidence` type (needs_verification | provisional | verified | high)
-  - [ ] 2.3 Create `src/schemas/session.ts` with Session Zod schema (see PRD Section 12.3)
-  - [ ] 2.4 Create `src/schemas/candidate.ts` with Candidate Zod schema including metadata (see PRD Section 12.4)
-  - [ ] 2.5 Create `src/schemas/triage.ts` with TriageStatus, TriageEntry, and TriageState schemas (see PRD Section 12.5)
-  - [ ] 2.6 Create `src/schemas/discovery-results.ts` with DiscoveryResults, WorkerSummary, ClusterInfo, DegradationLevel schemas (see PRD Section 12.6)
-  - [ ] 2.7 Create `src/schemas/cost.ts` with CostBreakdown schema (see PRD Section 12.7)
-  - [ ] 2.8 Create `src/schemas/stage.ts` with StageMetadata schema (see PRD Section 11.3)
-  - [ ] 2.9 Create `src/schemas/run-config.ts` with RunConfig schema (see PRD Section 11.5)
-  - [ ] 2.10 Create `src/schemas/manifest.ts` with RunManifest schema (see PRD Section 11.6)
-  - [ ] 2.11 Create `src/schemas/enhancement.ts` with EnhancementResult and PromptAnalysis schemas (see PRD Section FR0.9)
-  - [ ] 2.12 Create `src/schemas/worker.ts` with WorkerPlan, WorkerOutput, and EnrichedIntent schemas (see PRD Section FR3)
-  - [ ] 2.13 Create `src/schemas/index.ts` exporting all schemas
-  - [ ] 2.14 Create `src/schemas/migrations/index.ts` with lazy migration framework:
-    - [ ] 2.14.1 Implement `migrateSchema<T>(data: unknown, schemaType: string): T` function
-    - [ ] 2.14.2 Implement version checking and migration chain execution
-    - [ ] 2.14.3 Implement atomic write-back after migration
-  - [ ] 2.15 Write unit tests for all schemas validating correct and incorrect data
+- [x] **2.0 Schema Definitions & Versioning System**
+  - [x] 2.1 Create `src/schemas/versions.ts` with SCHEMA_VERSIONS constant for all schema types (see PRD Section 12.2)
+  - [x] 2.2 Create `src/schemas/common.ts` with shared types:
+    - [x] 2.2.1 Define `Flexibility` type (none | plusMinusDays | monthOnly)
+    - [x] 2.2.2 Define `SourceRef` type (url, publisher, retrievedAt, snippet)
+    - [x] 2.2.3 Define `ValidationStatus` type (verified | partially_verified | conflict_detected | unverified | not_applicable)
+    - [x] 2.2.4 Define `CandidateType` type (place | activity | neighborhood | daytrip | experience | food)
+    - [x] 2.2.5 Define `CandidateOrigin` type (web | places | youtube)
+    - [x] 2.2.6 Define `CandidateConfidence` type (needs_verification | provisional | verified | high)
+  - [x] 2.3 Create `src/schemas/session.ts` with Session Zod schema (see PRD Section 12.3)
+  - [x] 2.4 Create `src/schemas/candidate.ts` with Candidate Zod schema including metadata (see PRD Section 12.4)
+  - [x] 2.5 Create `src/schemas/triage.ts` with TriageStatus, TriageEntry, and TriageState schemas (see PRD Section 12.5)
+  - [x] 2.6 Create `src/schemas/discovery-results.ts` with DiscoveryResults, WorkerSummary, ClusterInfo, DegradationLevel schemas (see PRD Section 12.6)
+  - [x] 2.7 Create `src/schemas/cost.ts` with CostBreakdown schema (see PRD Section 12.7)
+  - [x] 2.8 Create `src/schemas/stage.ts` with StageMetadata schema (see PRD Section 11.3)
+  - [x] 2.9 Create `src/schemas/run-config.ts` with RunConfig schema (see PRD Section 11.5)
+  - [x] 2.10 Create `src/schemas/manifest.ts` with RunManifest schema (see PRD Section 11.6)
+  - [x] 2.11 Create `src/schemas/enhancement.ts` with EnhancementResult and PromptAnalysis schemas (see PRD Section FR0.9)
+  - [x] 2.12 Create `src/schemas/worker.ts` with WorkerPlan, WorkerOutput, and EnrichedIntent schemas (see PRD Section FR3)
+  - [x] 2.13 Create `src/schemas/index.ts` exporting all schemas
+  - [x] 2.14 Create `src/schemas/migrations/index.ts` with lazy migration framework:
+    - [x] 2.14.1 Implement `migrateSchema<T>(data: unknown, schemaType: string): T` function
+    - [x] 2.14.2 Implement version checking and migration chain execution
+    - [x] 2.14.3 Implement atomic write-back after migration
+  - [x] 2.15 Write unit tests for all schemas validating correct and incorrect data
 
 ---
 

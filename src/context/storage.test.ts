@@ -130,9 +130,7 @@ describe('Context Storage Operations', () => {
 
       await storeJournalEntry(entry);
 
-      expect(generateEmbedding).toHaveBeenCalledWith(
-        `${entry.summary}\n\n${entry.content}`
-      );
+      expect(generateEmbedding).toHaveBeenCalledWith(`${entry.summary}\n\n${entry.content}`);
 
       expect(mockAdd).toHaveBeenCalledWith([
         expect.objectContaining({
@@ -144,9 +142,7 @@ describe('Context Storage Operations', () => {
     });
 
     it('should handle embedding generation failure', async () => {
-      (generateEmbedding as any).mockRejectedValue(
-        new Error('API rate limit exceeded')
-      );
+      (generateEmbedding as any).mockRejectedValue(new Error('API rate limit exceeded'));
 
       const entry = {
         id: 'journal-002',
@@ -156,9 +152,7 @@ describe('Context Storage Operations', () => {
         topics: [],
       };
 
-      await expect(storeJournalEntry(entry)).rejects.toThrow(
-        'API rate limit exceeded'
-      );
+      await expect(storeJournalEntry(entry)).rejects.toThrow('API rate limit exceeded');
     });
 
     it('should handle collection not existing', async () => {
@@ -190,8 +184,18 @@ describe('Context Storage Operations', () => {
             name: 'Phase 0.0 - Context Persistence',
             sectionId: '0.0',
             items: [
-              { id: '0.0.1', description: 'Create embeddings service', completed: true, parentId: undefined },
-              { id: '0.0.2', description: 'Create storage layer', completed: false, parentId: undefined },
+              {
+                id: '0.0.1',
+                description: 'Create embeddings service',
+                completed: true,
+                parentId: undefined,
+              },
+              {
+                id: '0.0.2',
+                description: 'Create storage layer',
+                completed: false,
+                parentId: undefined,
+              },
             ],
             completionPct: 50,
           },
@@ -238,9 +242,7 @@ describe('Context Storage Operations', () => {
 
       await storePrdSection(section);
 
-      expect(generateEmbedding).toHaveBeenCalledWith(
-        `${section.title}\n\n${section.content}`
-      );
+      expect(generateEmbedding).toHaveBeenCalledWith(`${section.title}\n\n${section.content}`);
 
       expect(mockAdd).toHaveBeenCalledWith([
         expect.objectContaining({
@@ -336,17 +338,15 @@ describe('Context Storage Operations', () => {
 
       await expect(
         updateEntry<{ id: string }>('journal_entries', 'nonexistent', {})
-      ).rejects.toThrow(
-        'Entry with id "nonexistent" not found in collection "journal_entries"'
-      );
+      ).rejects.toThrow('Entry with id "nonexistent" not found in collection "journal_entries"');
     });
 
     it('should throw error if collection does not exist', async () => {
       (collectionExists as any).mockResolvedValue(false);
 
-      await expect(
-        updateEntry<{ id: string }>('nonexistent', 'some-id', {})
-      ).rejects.toThrow('Collection "nonexistent" does not exist');
+      await expect(updateEntry<{ id: string }>('nonexistent', 'some-id', {})).rejects.toThrow(
+        'Collection "nonexistent" does not exist'
+      );
     });
   });
 
@@ -472,9 +472,7 @@ describe('Context Storage Operations', () => {
 
   describe('error handling', () => {
     it('should propagate database errors', async () => {
-      (getCollection as any).mockRejectedValue(
-        new Error('Database connection failed')
-      );
+      (getCollection as any).mockRejectedValue(new Error('Database connection failed'));
 
       const entry = {
         id: 'journal-error',
@@ -484,9 +482,7 @@ describe('Context Storage Operations', () => {
         topics: [],
       };
 
-      await expect(storeJournalEntry(entry)).rejects.toThrow(
-        'Database connection failed'
-      );
+      await expect(storeJournalEntry(entry)).rejects.toThrow('Database connection failed');
     });
 
     it('should propagate add operation errors', async () => {
@@ -500,9 +496,7 @@ describe('Context Storage Operations', () => {
         topics: [],
       };
 
-      await expect(storeJournalEntry(entry)).rejects.toThrow(
-        'Write operation failed'
-      );
+      await expect(storeJournalEntry(entry)).rejects.toThrow('Write operation failed');
     });
   });
 });

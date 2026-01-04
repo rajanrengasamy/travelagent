@@ -203,20 +203,16 @@ export async function updateEntry<T extends { id: string }>(
   const escapedId = id.replace(/'/g, "''");
 
   // Query existing entry
-  const results = await collection
-    .query()
-    .where(`id = '${escapedId}'`)
-    .limit(1)
-    .toArray();
+  const results = await collection.query().where(`id = '${escapedId}'`).limit(1).toArray();
 
   if (results.length === 0) {
     throw new Error(`Entry with id "${id}" not found in collection "${collectionName}"`);
   }
 
-  const existingEntry = results[0];
+  const existingEntry = results[0] as Record<string, unknown>;
 
   // Merge updates
-  const updatedEntry = {
+  const updatedEntry: Record<string, unknown> = {
     ...existingEntry,
     ...updates,
   };
@@ -236,13 +232,9 @@ export async function storeJournalEntries(entries: JournalEntryInput[]): Promise
   if (entries.length === 0) return;
 
   // Generate embeddings for all entries
-  const textsForEmbedding = entries.map(
-    (entry) => `${entry.summary}\n\n${entry.content}`
-  );
+  const textsForEmbedding = entries.map((entry) => `${entry.summary}\n\n${entry.content}`);
 
-  const embeddings = await Promise.all(
-    textsForEmbedding.map((text) => generateEmbedding(text))
-  );
+  const embeddings = await Promise.all(textsForEmbedding.map((text) => generateEmbedding(text)));
 
   const fullEntries: JournalEntry[] = entries.map((entry, index) => ({
     ...entry,
@@ -264,13 +256,9 @@ export async function storePrdSections(sections: PrdSectionInput[]): Promise<voi
   if (sections.length === 0) return;
 
   // Generate embeddings for all sections
-  const textsForEmbedding = sections.map(
-    (section) => `${section.title}\n\n${section.content}`
-  );
+  const textsForEmbedding = sections.map((section) => `${section.title}\n\n${section.content}`);
 
-  const embeddings = await Promise.all(
-    textsForEmbedding.map((text) => generateEmbedding(text))
-  );
+  const embeddings = await Promise.all(textsForEmbedding.map((text) => generateEmbedding(text)));
 
   const fullSections: PrdSection[] = sections.map((section, index) => ({
     ...section,

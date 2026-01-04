@@ -327,7 +327,8 @@ Content 2.
 
     it('should report errors for failed section storage', async () => {
       mockReadFile.mockResolvedValue(samplePrd);
-      const storeFn = jest.fn<() => Promise<void>>()
+      const storeFn = jest
+        .fn<() => Promise<void>>()
         .mockRejectedValueOnce(new Error('Storage failed'))
         .mockResolvedValue(undefined);
 

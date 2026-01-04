@@ -188,10 +188,7 @@ function cleanItem(item: string): string {
  * @param workCompleted - List of completed work items
  * @returns Generated summary text
  */
-function generateSummary(
-  _context: string,
-  workCompleted: string[]
-): string {
+function generateSummary(_context: string, workCompleted: string[]): string {
   if (workCompleted.length === 0) {
     return 'This session focused on exploration and planning without concrete deliverables.';
   }
@@ -281,9 +278,7 @@ export function formatJournalEntry(entry: GeneratedJournalEntry): string {
  * @param conversationContext - The full conversation context
  * @returns Promise resolving to the generated journal entry
  */
-export async function generateSessionSummary(
-  conversationContext: string
-): Promise<GeneratedJournalEntry> {
+export function generateSessionSummary(conversationContext: string): GeneratedJournalEntry {
   // Extract all components
   const workCompleted = extractWorkCompleted(conversationContext);
   const openItems = extractOpenItems(conversationContext);

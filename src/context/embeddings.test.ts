@@ -341,9 +341,7 @@ describe('Embedding Service', () => {
     });
 
     it('should throw error if any text is empty', async () => {
-      await expect(generateEmbeddings(['valid', ''])).rejects.toThrow(
-        'Input text cannot be empty'
-      );
+      await expect(generateEmbeddings(['valid', ''])).rejects.toThrow('Input text cannot be empty');
     });
   });
 

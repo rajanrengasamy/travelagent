@@ -284,7 +284,7 @@ export interface DbStatus {
  */
 export const CONTEXT_PATHS = {
   /** Root data directory */
-  DATA_DIR: process.env.TRAVELAGENT_DATA_DIR || `${process.env.HOME}/.travelagent`,
+  DATA_DIR: process.env.TRAVELAGENT_DATA_DIR ?? `${process.env.HOME}/.travelagent`,
   /** Context storage directory */
   get CONTEXT_DIR() {
     return `${this.DATA_DIR}/context`;

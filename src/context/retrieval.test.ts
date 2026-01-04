@@ -27,36 +27,44 @@ const mockSearchLimit = jest.fn<any>();
 jest.unstable_mockModule('./db.js', () => ({
   getCollection: jest.fn(),
   collectionExists: jest.fn(),
-  rowToJournalEntry: jest.fn((row: Record<string, unknown>): JournalEntry => ({
-    id: row.id as string,
-    timestamp: row.timestamp as string,
-    content: row.content as string,
-    summary: row.summary as string,
-    topics: JSON.parse(row.topics as string) as string[],
-    embedding: Array.from(row.embedding as number[]),
-  })),
-  rowToTodoSnapshot: jest.fn((row: Record<string, unknown>): TodoSnapshot => ({
-    id: row.id as string,
-    timestamp: row.timestamp as string,
-    sections: JSON.parse(row.sections as string),
-    overallCompletionPct: row.overallCompletionPct as number,
-    embedding: Array.from(row.embedding as number[]),
-  })),
-  rowToPrdSection: jest.fn((row: Record<string, unknown>): PrdSection => ({
-    id: row.id as string,
-    sectionNumber: row.sectionNumber as number,
-    title: row.title as string,
-    content: row.content as string,
-    embedding: Array.from(row.embedding as number[]),
-  })),
-  rowToSessionSummary: jest.fn((row: Record<string, unknown>): SessionSummary => ({
-    id: row.id as string,
-    timestamp: row.timestamp as string,
-    summary: row.summary as string,
-    workCompleted: JSON.parse(row.workCompleted as string) as string[],
-    openItems: JSON.parse(row.openItems as string) as string[],
-    embedding: Array.from(row.embedding as number[]),
-  })),
+  rowToJournalEntry: jest.fn(
+    (row: Record<string, unknown>): JournalEntry => ({
+      id: row.id as string,
+      timestamp: row.timestamp as string,
+      content: row.content as string,
+      summary: row.summary as string,
+      topics: JSON.parse(row.topics as string) as string[],
+      embedding: Array.from(row.embedding as number[]),
+    })
+  ),
+  rowToTodoSnapshot: jest.fn(
+    (row: Record<string, unknown>): TodoSnapshot => ({
+      id: row.id as string,
+      timestamp: row.timestamp as string,
+      sections: JSON.parse(row.sections as string),
+      overallCompletionPct: row.overallCompletionPct as number,
+      embedding: Array.from(row.embedding as number[]),
+    })
+  ),
+  rowToPrdSection: jest.fn(
+    (row: Record<string, unknown>): PrdSection => ({
+      id: row.id as string,
+      sectionNumber: row.sectionNumber as number,
+      title: row.title as string,
+      content: row.content as string,
+      embedding: Array.from(row.embedding as number[]),
+    })
+  ),
+  rowToSessionSummary: jest.fn(
+    (row: Record<string, unknown>): SessionSummary => ({
+      id: row.id as string,
+      timestamp: row.timestamp as string,
+      summary: row.summary as string,
+      workCompleted: JSON.parse(row.workCompleted as string) as string[],
+      openItems: JSON.parse(row.openItems as string) as string[],
+      embedding: Array.from(row.embedding as number[]),
+    })
+  ),
 }));
 
 // Import after mocks are set up

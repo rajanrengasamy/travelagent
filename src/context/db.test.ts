@@ -157,9 +157,7 @@ describe('LanceDB Database Layer', () => {
       await initializeCollections();
 
       const status = await getDbStatus();
-      expect(status.collections).toHaveLength(
-        Object.keys(COLLECTION_NAMES).length
-      );
+      expect(status.collections).toHaveLength(Object.keys(COLLECTION_NAMES).length);
     });
 
     test('collectionExists returns false for non-existent collection', async () => {
@@ -188,9 +186,7 @@ describe('LanceDB Database Layer', () => {
     });
 
     test('getCollection throws for non-existent collection', async () => {
-      await expect(getCollection('non_existent')).rejects.toThrow(
-        /does not exist/
-      );
+      await expect(getCollection('non_existent')).rejects.toThrow(/does not exist/);
     });
 
     test('getCollection caches table references', async () => {
@@ -253,9 +249,7 @@ describe('LanceDB Database Layer', () => {
 
       const status = await getDbStatus();
 
-      expect(status.collections).toHaveLength(
-        Object.keys(COLLECTION_NAMES).length
-      );
+      expect(status.collections).toHaveLength(Object.keys(COLLECTION_NAMES).length);
     });
   });
 
@@ -539,10 +533,7 @@ describe('LanceDB Database Layer', () => {
 
       // Perform vector search
       const queryVector = new Array(1536).fill(0.15);
-      const results = await table
-        .vectorSearch(queryVector)
-        .limit(2)
-        .toArray();
+      const results = await table.vectorSearch(queryVector).limit(2).toArray();
 
       expect(results.length).toBe(2);
     });

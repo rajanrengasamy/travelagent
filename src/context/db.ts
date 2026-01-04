@@ -95,9 +95,7 @@ export const COLLECTION_SCHEMAS = {
 /**
  * Convert JournalEntry to LanceDB row format
  */
-export function journalEntryToRow(
-  entry: JournalEntry
-): Record<string, unknown> {
+export function journalEntryToRow(entry: JournalEntry): Record<string, unknown> {
   return {
     id: entry.id,
     timestamp: entry.timestamp,
@@ -125,9 +123,7 @@ export function rowToJournalEntry(row: Record<string, unknown>): JournalEntry {
 /**
  * Convert TodoSnapshot to LanceDB row format
  */
-export function todoSnapshotToRow(
-  snapshot: TodoSnapshot
-): Record<string, unknown> {
+export function todoSnapshotToRow(snapshot: TodoSnapshot): Record<string, unknown> {
   return {
     id: snapshot.id,
     timestamp: snapshot.timestamp,
@@ -144,7 +140,7 @@ export function rowToTodoSnapshot(row: Record<string, unknown>): TodoSnapshot {
   return {
     id: row.id as string,
     timestamp: row.timestamp as string,
-    sections: JSON.parse(row.sections as string),
+    sections: JSON.parse(row.sections as string) as TodoSnapshot['sections'],
     overallCompletionPct: row.overallCompletionPct as number,
     embedding: Array.from(row.embedding as Float32Array | number[]),
   };
@@ -179,9 +175,7 @@ export function rowToPrdSection(row: Record<string, unknown>): PrdSection {
 /**
  * Convert SessionSummary to LanceDB row format
  */
-export function sessionSummaryToRow(
-  summary: SessionSummary
-): Record<string, unknown> {
+export function sessionSummaryToRow(summary: SessionSummary): Record<string, unknown> {
   return {
     id: summary.id,
     timestamp: summary.timestamp,
@@ -195,9 +189,7 @@ export function sessionSummaryToRow(
 /**
  * Convert LanceDB row to SessionSummary
  */
-export function rowToSessionSummary(
-  row: Record<string, unknown>
-): SessionSummary {
+export function rowToSessionSummary(row: Record<string, unknown>): SessionSummary {
   return {
     id: row.id as string,
     timestamp: row.timestamp as string,
@@ -248,7 +240,7 @@ export function resetDbPath(): void {
  */
 export async function connectToDb(): Promise<Connection> {
   // Return existing connection if available and open
-  if (dbConnection !== null && dbConnection.isOpen()) {
+  if (dbConnection?.isOpen()) {
     return dbConnection;
   }
 
@@ -272,7 +264,7 @@ export async function connectToDb(): Promise<Connection> {
  * Safe to call multiple times. After closing, subsequent operations
  * will require a new connection via connectToDb().
  */
-export async function closeDb(): Promise<void> {
+export function closeDb(): void {
   tableCache.clear();
   if (dbConnection !== null) {
     try {
@@ -290,7 +282,7 @@ export async function closeDb(): Promise<void> {
  * @returns Connection | null - Active connection or null if not connected
  */
 export function getDbConnection(): Connection | null {
-  if (dbConnection !== null && dbConnection.isOpen()) {
+  if (dbConnection?.isOpen()) {
     return dbConnection;
   }
   return null;
@@ -330,7 +322,7 @@ export async function collectionExists(name: string): Promise<boolean> {
 export async function getCollection(name: string): Promise<Table> {
   // Check cache first
   const cached = tableCache.get(name);
-  if (cached && cached.isOpen()) {
+  if (cached?.isOpen()) {
     return cached;
   }
 
@@ -338,9 +330,7 @@ export async function getCollection(name: string): Promise<Table> {
   const tableNames = await conn.tableNames();
 
   if (!tableNames.includes(name)) {
-    throw new Error(
-      `Collection '${name}' does not exist. Call initializeCollections() first.`
-    );
+    throw new Error(`Collection '${name}' does not exist. Call initializeCollections() first.`);
   }
 
   const table = await conn.openTable(name);
@@ -369,14 +359,12 @@ export async function initializeCollections(): Promise<void> {
 
         // Delete the seed record immediately
         const table = await conn.openTable(collectionName);
-        await table.delete(`id = '${seedRecord.id}'`);
+        await table.delete(`id = '${String(seedRecord.id)}'`);
 
         tableCache.set(collectionName, table);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Failed to create collection ${collectionName}: ${message}`
-        );
+        throw new Error(`Failed to create collection ${collectionName}: ${message}`);
       }
     }
   }
@@ -471,8 +459,8 @@ export async function dropAllCollections(): Promise<void> {
  * Close the database connection and clear caches
  * @deprecated Use closeDb() instead
  */
-export async function closeDatabase(): Promise<void> {
-  return closeDb();
+export function closeDatabase(): void {
+  closeDb();
 }
 
 /**

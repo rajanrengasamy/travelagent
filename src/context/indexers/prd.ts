@@ -76,7 +76,10 @@ export function extractSectionNumber(header: string): number {
  */
 export function extractTitle(header: string): string {
   // Remove leading number and period if present
-  return header.trim().replace(/^\d+\.\s*/, '').trim();
+  return header
+    .trim()
+    .replace(/^\d+\.\s*/, '')
+    .trim();
 }
 
 /**
@@ -121,8 +124,6 @@ export function parsePrdSections(prdContent: string): ParsedPrdSection[] {
   // Using regex that captures the header for splitting
   const parts = prdContent.split(/^## /gm);
 
-  let sectionIndex = 0;
-
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
 
@@ -136,7 +137,6 @@ export function parsePrdSections(prdContent: string): ParsedPrdSection[] {
           title: 'Preamble',
           content: preamble,
         });
-        sectionIndex++;
       }
       continue;
     }
@@ -165,8 +165,6 @@ export function parsePrdSections(prdContent: string): ParsedPrdSection[] {
       title,
       content: fullContent,
     });
-
-    sectionIndex++;
   }
 
   return sections;
@@ -191,7 +189,7 @@ export async function needsReindex(prdPath: string): Promise<boolean> {
     }
 
     return cachedHashMetadata.fileHash !== currentHash;
-  } catch (error) {
+  } catch {
     // File doesn't exist or can't be read - needs indexing attempt
     return true;
   }
@@ -251,8 +249,7 @@ export async function indexPrd(
         }
         indexed++;
       } catch (err) {
-        const errorMsg =
-          err instanceof Error ? err.message : 'Unknown error';
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         errors.push(`Failed to index section "${section.title}": ${errorMsg}`);
       }
     }

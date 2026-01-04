@@ -9,12 +9,7 @@
  */
 
 import { readFile } from 'fs/promises';
-import type {
-  TodoSection,
-  TodoItem,
-  TodoSnapshot,
-  CompletionStats,
-} from '../types.js';
+import type { TodoSection, TodoItem, TodoSnapshot, CompletionStats } from '../types.js';
 
 /**
  * Parsed TODO item from markdown
@@ -64,7 +59,7 @@ export function extractTaskId(line: string): string | null {
   // Can be after checkbox, possibly wrapped in ** for bold
   const patterns = [
     /^\s*-\s*\[[ x]\]\s*\*\*(\d+(?:\.\d+)*)\s/, // Bold header: - [ ] **0.0.1
-    /^\s*-\s*\[[ x]\]\s*(\d+(?:\.\d+)*)\s/,     // Regular: - [ ] 0.0.1.1
+    /^\s*-\s*\[[ x]\]\s*(\d+(?:\.\d+)*)\s/, // Regular: - [ ] 0.0.1.1
   ];
 
   for (const pattern of patterns) {
@@ -120,11 +115,11 @@ export function getIndentLevel(line: string): number {
  */
 export function extractDescription(line: string): string {
   // Remove checkbox, leading whitespace, and optional task ID
-  let desc = line
-    .replace(/^\s*- \[[ x]\]\s*/, '')   // Remove checkbox
-    .replace(/^\*\*[\d.]+\s*/, '')       // Remove bold task ID
-    .replace(/^\d+(?:\.\d+)*\s+/, '')    // Remove plain task ID
-    .replace(/\*\*/g, '')                 // Remove remaining bold markers
+  const desc = line
+    .replace(/^\s*- \[[ x]\]\s*/, '') // Remove checkbox
+    .replace(/^\*\*[\d.]+\s*/, '') // Remove bold task ID
+    .replace(/^\d+(?:\.\d+)*\s+/, '') // Remove plain task ID
+    .replace(/\*\*/g, '') // Remove remaining bold markers
     .trim();
 
   return desc;
@@ -137,10 +132,7 @@ export function extractDescription(line: string): string {
  * @param sectionId - ID of parent section for generating item IDs
  * @returns Array of parsed TODO items
  */
-export function parseTodoItems(
-  sectionContent: string,
-  sectionId: string = 'unknown'
-): TodoItem[] {
+export function parseTodoItems(sectionContent: string, sectionId: string = 'unknown'): TodoItem[] {
   const items: TodoItem[] = [];
   const lines = sectionContent.split('\n');
 
@@ -159,21 +151,15 @@ export function parseTodoItems(
     const description = extractDescription(line);
 
     // Generate ID if not present in the line
-    const id = taskId || `${sectionId}-item-${itemIndex}`;
+    const id = taskId ?? `${sectionId}-item-${itemIndex}`;
     itemIndex++;
 
     // Determine parent based on indentation
-    while (
-      parentStack.length > 0 &&
-      parentStack[parentStack.length - 1].indent >= indentLevel
-    ) {
+    while (parentStack.length > 0 && parentStack[parentStack.length - 1].indent >= indentLevel) {
       parentStack.pop();
     }
 
-    const parentId =
-      parentStack.length > 0
-        ? parentStack[parentStack.length - 1].id
-        : undefined;
+    const parentId = parentStack.length > 0 ? parentStack[parentStack.length - 1].id : undefined;
 
     items.push({
       id,
@@ -231,7 +217,10 @@ export function extractSectionId(line: string): string {
   }
 
   // Fallback: slugify the header text
-  const text = line.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim();
+  const text = line
+    .replace(/^#+\s*/, '')
+    .replace(/\*\*/g, '')
+    .trim();
   return text
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -247,9 +236,9 @@ export function extractSectionId(line: string): string {
  */
 export function extractSectionName(line: string): string {
   return line
-    .replace(/^#+\s*/, '')        // Remove H3 markers
-    .replace(/^\s*-\s*\[[ x]\]\s*/, '')  // Remove checkbox
-    .replace(/\*\*/g, '')          // Remove bold markers
+    .replace(/^#+\s*/, '') // Remove H3 markers
+    .replace(/^\s*-\s*\[[ x]\]\s*/, '') // Remove checkbox
+    .replace(/\*\*/g, '') // Remove bold markers
     .trim();
 }
 
@@ -417,10 +406,7 @@ export async function snapshotTodo(
  * @param after - Later snapshot
  * @returns Diff with completed, added, and removed task IDs
  */
-export function diffTodoStates(
-  before: TodoSnapshot,
-  after: TodoSnapshot
-): TodoDiff {
+export function diffTodoStates(before: TodoSnapshot, after: TodoSnapshot): TodoDiff {
   // Build maps of item IDs to completion status
   const beforeItems = new Map<string, boolean>();
   const afterItems = new Map<string, boolean>();

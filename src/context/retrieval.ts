@@ -38,6 +38,20 @@ const DEFAULT_QUERY_OPTIONS: Required<QueryOptions> = {
 };
 
 /**
+ * Interface for LanceDB search result rows with distance metadata
+ */
+interface LanceSearchResult extends Record<string, unknown> {
+  _distance?: number;
+}
+
+/**
+ * Interface for LanceDB rows with timestamp field (for sorting)
+ */
+interface TimestampedRow extends Record<string, unknown> {
+  timestamp: string;
+}
+
+/**
  * Perform a vector similarity search on a collection
  *
  * @param collectionName - Name of the collection to search
@@ -64,20 +78,21 @@ async function vectorSearch<T>(
     const collection = await getCollection(collectionName);
 
     // Perform vector search
-    const results = await collection
+    const results = (await collection
       .search(queryEmbedding)
       .limit(limit)
-      .toArray();
+      .toArray()) as LanceSearchResult[];
 
     // Map results to SearchResult format
     return results.map((result) => {
       // LanceDB returns _distance, convert to similarity (1 - distance for L2)
-      const distance = (result._distance as number) || 0;
+      const distance = result._distance ?? 0;
       const similarity = 1 / (1 + distance); // Convert distance to similarity
 
       // Remove internal fields and convert to typed object
-      const { _distance, ...row } = result;
-      const item = rowConverter(row as Record<string, unknown>);
+      const row = { ...result };
+      delete row._distance;
+      const item = rowConverter(row);
 
       return {
         item,
@@ -128,20 +143,16 @@ export async function getRecentSessions(count: number): Promise<SessionSummary[]
     const collection = await getCollection(COLLECTION_NAMES.SESSION_SUMMARIES);
 
     // Get all entries (LanceDB doesn't have native sorting, so we fetch and sort)
-    const results = await collection.query().toArray();
+    const results = (await collection.query().toArray()) as TimestampedRow[];
 
     // Sort by timestamp descending and limit
     const sortedResults = results
       .sort((a, b) => {
-        const timestampA = a.timestamp as string;
-        const timestampB = b.timestamp as string;
-        return timestampB.localeCompare(timestampA);
+        return b.timestamp.localeCompare(a.timestamp);
       })
       .slice(0, count);
 
-    return sortedResults.map((row) =>
-      rowToSessionSummary(row as Record<string, unknown>)
-    );
+    return sortedResults.map((row) => rowToSessionSummary(row as Record<string, unknown>));
   } catch (error) {
     console.error('Failed to get recent sessions:', error);
     return [];
@@ -163,7 +174,7 @@ export async function getCurrentTodoState(): Promise<TodoSnapshot | null> {
     const collection = await getCollection(COLLECTION_NAMES.TODO_SNAPSHOTS);
 
     // Get all entries and find the most recent
-    const results = await collection.query().toArray();
+    const results = (await collection.query().toArray()) as TimestampedRow[];
 
     if (results.length === 0) {
       return null;
@@ -171,9 +182,7 @@ export async function getCurrentTodoState(): Promise<TodoSnapshot | null> {
 
     // Sort by timestamp descending and get the first
     const mostRecent = results.sort((a, b) => {
-      const timestampA = a.timestamp as string;
-      const timestampB = b.timestamp as string;
-      return timestampB.localeCompare(timestampA);
+      return b.timestamp.localeCompare(a.timestamp);
     })[0];
 
     return rowToTodoSnapshot(mostRecent as Record<string, unknown>);
@@ -190,10 +199,7 @@ export async function getCurrentTodoState(): Promise<TodoSnapshot | null> {
  * @param limit - Maximum number of results (default: 3)
  * @returns Array of matching PRD sections sorted by relevance
  */
-export async function queryPrdSections(
-  query: string,
-  limit: number = 3
-): Promise<PrdSection[]> {
+export async function queryPrdSections(query: string, limit: number = 3): Promise<PrdSection[]> {
   const results = await vectorSearch<PrdSection>(
     COLLECTION_NAMES.PRD_SECTIONS,
     query,
@@ -319,11 +325,7 @@ export async function getJournalEntryById(id: string): Promise<JournalEntry | nu
     const collection = await getCollection(COLLECTION_NAMES.JOURNAL_ENTRIES);
     // Escape single quotes in id to prevent SQL injection
     const escapedId = id.replace(/'/g, "''");
-    const results = await collection
-      .query()
-      .where(`id = '${escapedId}'`)
-      .limit(1)
-      .toArray();
+    const results = await collection.query().where(`id = '${escapedId}'`).limit(1).toArray();
 
     if (results.length === 0) {
       return null;
@@ -351,11 +353,7 @@ export async function getPrdSectionById(id: string): Promise<PrdSection | null> 
     const collection = await getCollection(COLLECTION_NAMES.PRD_SECTIONS);
     // Escape single quotes in id to prevent SQL injection
     const escapedId = id.replace(/'/g, "''");
-    const results = await collection
-      .query()
-      .where(`id = '${escapedId}'`)
-      .limit(1)
-      .toArray();
+    const results = await collection.query().where(`id = '${escapedId}'`).limit(1).toArray();
 
     if (results.length === 0) {
       return null;
@@ -383,11 +381,7 @@ export async function getSessionSummaryById(id: string): Promise<SessionSummary 
     const collection = await getCollection(COLLECTION_NAMES.SESSION_SUMMARIES);
     // Escape single quotes in id to prevent SQL injection
     const escapedId = id.replace(/'/g, "''");
-    const results = await collection
-      .query()
-      .where(`id = '${escapedId}'`)
-      .limit(1)
-      .toArray();
+    const results = await collection.query().where(`id = '${escapedId}'`).limit(1).toArray();
 
     if (results.length === 0) {
       return null;
@@ -413,20 +407,16 @@ export async function getTodoSnapshots(limit: number = 10): Promise<TodoSnapshot
 
   try {
     const collection = await getCollection(COLLECTION_NAMES.TODO_SNAPSHOTS);
-    const results = await collection.query().toArray();
+    const results = (await collection.query().toArray()) as TimestampedRow[];
 
     // Sort by timestamp descending and limit
     const sortedResults = results
       .sort((a, b) => {
-        const timestampA = a.timestamp as string;
-        const timestampB = b.timestamp as string;
-        return timestampB.localeCompare(timestampA);
+        return b.timestamp.localeCompare(a.timestamp);
       })
       .slice(0, limit);
 
-    return sortedResults.map((row) =>
-      rowToTodoSnapshot(row as Record<string, unknown>)
-    );
+    return sortedResults.map((row) => rowToTodoSnapshot(row as Record<string, unknown>));
   } catch (error) {
     console.error('Failed to get TODO snapshots:', error);
     return [];

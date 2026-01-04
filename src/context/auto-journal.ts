@@ -9,12 +9,7 @@
  * @see PRD Section 0.8
  */
 
-import type {
-  AutoJournalConfig,
-  SessionStats,
-  TodoState,
-  Action,
-} from './types.js';
+import type { AutoJournalConfig, SessionStats, TodoState, Action } from './types.js';
 import { DEFAULT_AUTO_JOURNAL_CONFIG } from './types.js';
 
 /**
@@ -60,10 +55,7 @@ export function shouldTriggerJournal(
  * @param after - Current TODO state
  * @returns Number of newly completed items
  */
-export function trackTodoCompletion(
-  before: TodoState,
-  after: TodoState
-): number {
+export function trackTodoCompletion(before: TodoState, after: TodoState): number {
   let completedCount = 0;
 
   // Iterate through all items in the 'after' state
@@ -94,10 +86,7 @@ export function trackTodoCompletion(
  * @param significantTypes - List of significant action patterns
  * @returns true if the action is significant
  */
-export function isSignificantAction(
-  action: Action,
-  significantTypes: string[]
-): boolean {
+export function isSignificantAction(action: Action, significantTypes: string[]): boolean {
   for (const pattern of significantTypes) {
     // Check for exact type match
     if (action.type === pattern) {
@@ -133,9 +122,7 @@ export function trackSignificantActions(
   actions: Action[],
   config: AutoJournalConfig = DEFAULT_AUTO_JOURNAL_CONFIG
 ): number {
-  return actions.filter((action) =>
-    isSignificantAction(action, config.significantActions)
-  ).length;
+  return actions.filter((action) => isSignificantAction(action, config.significantActions)).length;
 }
 
 /**
@@ -187,14 +174,11 @@ export function updateSessionStats(
   // Calculate duration from session start
   const startTime = new Date(stats.sessionStartTime);
   const now = new Date();
-  const durationMinutes = Math.floor(
-    (now.getTime() - startTime.getTime()) / (1000 * 60)
-  );
+  const durationMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
 
   return {
     todosCompleted: stats.todosCompleted + newlyCompleted,
-    significantActionsCount:
-      stats.significantActionsCount + significantNewActions,
+    significantActionsCount: stats.significantActionsCount + significantNewActions,
     durationMinutes,
     sessionStartTime: stats.sessionStartTime,
   };

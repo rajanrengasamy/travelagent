@@ -28,7 +28,7 @@ describe('journal-generator', () => {
       const items = extractWorkCompleted(context);
 
       expect(items.length).toBeGreaterThan(0);
-      expect(items.some(i => i.toLowerCase().includes('auto-journal'))).toBe(true);
+      expect(items.some((i) => i.toLowerCase().includes('auto-journal'))).toBe(true);
     });
 
     it('should extract checked checkboxes', () => {
@@ -64,7 +64,7 @@ describe('journal-generator', () => {
       const items = extractWorkCompleted(context);
 
       // The very short item 'x' should be filtered out
-      expect(items.every(i => i.length > 5)).toBe(true);
+      expect(items.every((i) => i.length > 5)).toBe(true);
     });
   });
 

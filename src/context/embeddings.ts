@@ -12,11 +12,7 @@ import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import {
-  DEFAULT_EMBEDDING_CONFIG,
-  CONTEXT_PATHS,
-  type EmbeddingConfig,
-} from './types.js';
+import { DEFAULT_EMBEDDING_CONFIG, CONTEXT_PATHS, type EmbeddingConfig } from './types.js';
 
 /**
  * Maximum number of embeddings to keep in memory cache
@@ -230,10 +226,7 @@ function sleep(ms: number): Promise<void> {
  * @returns Delay in milliseconds
  */
 function calculateRetryDelay(attempt: number, config: RetryConfig): number {
-  const exponentialDelay = Math.min(
-    config.maxDelayMs,
-    config.baseDelayMs * Math.pow(2, attempt)
-  );
+  const exponentialDelay = Math.min(config.maxDelayMs, config.baseDelayMs * Math.pow(2, attempt));
   const jitter = (Math.random() * 2 - 1) * config.jitterMs;
   return Math.max(0, exponentialDelay + jitter);
 }
@@ -322,10 +315,7 @@ function prepareInput(text: string, config: EmbeddingConfig): string {
  * @returns Result of the function
  * @throws Error after all retries are exhausted
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retryConfig: RetryConfig
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retryConfig: RetryConfig): Promise<T> {
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
@@ -351,9 +341,7 @@ async function withRetry<T>(
       throw new Error('Invalid OpenAI API key. Please check your OPENAI_API_KEY.');
     }
     if (lastError.status === 429) {
-      throw new Error(
-        'OpenAI rate limit exceeded after retries. Please try again later.'
-      );
+      throw new Error('OpenAI rate limit exceeded after retries. Please try again later.');
     }
     throw new Error(
       `OpenAI API error: ${lastError instanceof Error ? lastError.message : String(lastError.message)}`
@@ -447,7 +435,7 @@ export async function generateEmbeddings(
   const preparedTexts = texts.map((text) => prepareInput(text, config));
 
   // Check cache for all texts
-  const results: (number[] | null)[] = new Array(preparedTexts.length).fill(null);
+  const results: (number[] | null)[] = Array.from<number[] | null>({ length: preparedTexts.length }).fill(null);
   const uncachedIndices: number[] = [];
   const uncachedTexts: string[] = [];
 
@@ -501,15 +489,11 @@ export async function generateEmbeddings(
  * @returns Number of embeddings loaded
  */
 export function loadCacheFromDisk(cachePath?: string): number {
-  const filePath =
-    cachePath || join(CONTEXT_PATHS.EMBEDDINGS_CACHE_DIR, 'cache.json');
+  const filePath = cachePath ?? join(CONTEXT_PATHS.EMBEDDINGS_CACHE_DIR, 'cache.json');
 
   try {
     if (existsSync(filePath)) {
-      const data = JSON.parse(readFileSync(filePath, 'utf-8')) as Record<
-        string,
-        number[]
-      >;
+      const data = JSON.parse(readFileSync(filePath, 'utf-8')) as Record<string, number[]>;
       let loaded = 0;
       Object.entries(data).forEach(([key, value]) => {
         if (embeddingCache.size < MAX_CACHE_SIZE) {
@@ -536,8 +520,7 @@ export function loadCacheFromDisk(cachePath?: string): number {
  * @returns True if save was successful
  */
 export function saveCacheToDisk(cachePath?: string): boolean {
-  const filePath =
-    cachePath || join(CONTEXT_PATHS.EMBEDDINGS_CACHE_DIR, 'cache.json');
+  const filePath = cachePath ?? join(CONTEXT_PATHS.EMBEDDINGS_CACHE_DIR, 'cache.json');
 
   try {
     const dir = filePath.substring(0, filePath.lastIndexOf('/'));

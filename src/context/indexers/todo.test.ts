@@ -109,17 +109,15 @@ describe('TODO Indexer', () => {
 
   describe('extractDescription', () => {
     it('should extract clean descriptions', () => {
-      expect(extractDescription('- [ ] 0.0.1 Install dependencies'))
-        .toBe('Install dependencies');
-      expect(extractDescription('- [x] **0.0.2 Embedding Service**'))
-        .toBe('Embedding Service');
-      expect(extractDescription('- [ ] Create file'))
-        .toBe('Create file');
+      expect(extractDescription('- [ ] 0.0.1 Install dependencies')).toBe('Install dependencies');
+      expect(extractDescription('- [x] **0.0.2 Embedding Service**')).toBe('Embedding Service');
+      expect(extractDescription('- [ ] Create file')).toBe('Create file');
     });
 
     it('should handle complex descriptions', () => {
-      expect(extractDescription('  - [ ] 1.2.3 Do something with `code`'))
-        .toBe('Do something with `code`');
+      expect(extractDescription('  - [ ] 1.2.3 Do something with `code`')).toBe(
+        'Do something with `code`'
+      );
     });
   });
 
@@ -408,7 +406,9 @@ Nothing here yet.
 
     it('should call store function if provided', async () => {
       mockReadFile.mockResolvedValue(sampleTodo);
-      const storeFn = jest.fn<(snapshot: TodoSnapshot) => Promise<void>>().mockResolvedValue(undefined);
+      const storeFn = jest
+        .fn<(snapshot: TodoSnapshot) => Promise<void>>()
+        .mockResolvedValue(undefined);
 
       await snapshotTodo('/path/to/todo.md', storeFn);
 
