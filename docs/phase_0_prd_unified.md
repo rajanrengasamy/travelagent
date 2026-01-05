@@ -4,9 +4,9 @@
 
 **Status:** Final (Implementation Ready)
 
-**Last updated:** 2026-01-02
+**Last updated:** 2026-01-05
 
-**Version:** 1.2
+**Version:** 1.3
 
 ---
 
@@ -32,13 +32,18 @@
 17. [Non-Functional Requirements](#17-non-functional-requirements)
 18. [Evaluation Harness](#18-evaluation-harness)
 19. [Acceptance Criteria](#19-acceptance-criteria)
-20. [Delivery Plan](#20-delivery-plan)
-21. [Risks and Mitigations](#21-risks-and-mitigations)
-22. [Resolved Questions](#22-resolved-questions)
-23. [API Keys and Secrets](#23-api-keys-and-secrets)
-24. [Appendix A: TypeScript Types](#appendix-a-typescript-types)
-25. [Appendix B: results.md Template](#appendix-b-resultsmd-template)
-26. [Appendix C: Prompt Templates](#appendix-c-prompt-templates)
+20. [Telegram Interface Architecture](#20-telegram-interface-architecture)
+21. [Multimodal Input Processing](#21-multimodal-input-processing)
+22. [HTML Output Generation](#22-html-output-generation)
+23. [Mac Studio Operations](#23-mac-studio-operations)
+24. [Job Queue & Processing](#24-job-queue--processing)
+25. [Delivery Plan](#25-delivery-plan)
+26. [Risks and Mitigations](#26-risks-and-mitigations)
+27. [Resolved Questions](#27-resolved-questions)
+28. [API Keys and Secrets](#28-api-keys-and-secrets)
+29. [Appendix A: TypeScript Types](#appendix-a-typescript-types)
+30. [Appendix B: results.md Template](#appendix-b-resultsmd-template)
+31. [Appendix C: Prompt Templates](#appendix-c-prompt-templates)
 
 ---
 
@@ -2311,7 +2316,304 @@ RESULT: PASS
 
 ---
 
-## 20. Delivery Plan (Implementation Slices)
+## 20. Telegram Interface Architecture
+
+> For complete details, see [telegram-architecture-v2.md](./telegram-architecture-v2.md)
+
+### 20.1 Overview
+
+The Telegram interface provides a mobile-first way to interact with the Travel Discovery Orchestrator. Users can send text, videos, and images via Telegram, and receive shareable HTML results.
+
+### 20.2 Architecture Decision
+
+**Selected: Managed Webhook Front Door + Mac Worker (Option B)**
+
+```
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│    Telegram     │      │     Vercel      │      │   Mac Studio    │
+│   (User Input)  │─────>│   (Webhook +    │─────>│   (Worker +     │
+│                 │      │    Job Queue)   │<─────│    Pipeline)    │
+└─────────────────┘      └────────┬────────┘      └─────────────────┘
+                                  │
+                                  v
+                         ┌─────────────────┐
+                         │  Vercel Blob    │
+                         │  (Static HTML)  │
+                         └─────────────────┘
+```
+
+### 20.3 Key Decisions
+
+| Concern | Solution |
+|---------|----------|
+| Telegram requires HTTPS endpoint | Vercel Functions (managed, free) |
+| Video processing needs sustained compute | Mac Studio (no timeout limits) |
+| Pipeline can take 45-90 seconds | Async job queue (not request-blocking) |
+| Shareable results | Vercel Blob (static HTML, global CDN) |
+| Security surface | Minimal public endpoints, Mac is private |
+
+### 20.4 Mac Studio Role
+
+The Mac Studio is an **orchestrator**, NOT an inference server:
+
+| DOES | DOES NOT |
+|------|----------|
+| Run the worker process | Host LLMs locally |
+| Call cloud APIs (Gemini, Perplexity, etc.) | Run model inference |
+| Store session data locally | Serve public endpoints |
+| Generate and upload HTML | Require port forwarding |
+
+### 20.5 Why This Architecture
+
+1. **Async by Default** - Never block Telegram webhook with expensive work
+2. **Mac as Durable Worker** - Pulls jobs, runs pipeline, owns persistent state
+3. **Minimal Public Surface** - Only webhook + static HTML exposed
+4. **No Inbound Connectivity** - Mac only makes outbound HTTPS requests
+5. **Checkpoint Everything** - Resume from any failure point
+
+---
+
+## 21. Multimodal Input Processing
+
+> For complete details, see [telegram-architecture-v2.md](./telegram-architecture-v2.md) Section 4.4
+
+### 21.1 Supported Input Types
+
+| Input Type | Handling | Limits |
+|------------|----------|--------|
+| Text message | Direct to prompt synthesis | 4000 chars max |
+| Video (uploaded) | Download + Gemini analysis | 50MB, 5 min duration |
+| Photo | Download + Gemini analysis | 20MB |
+| Video (as document) | Download + Gemini analysis | For large files |
+| Album (multiple) | Process each, merge | Max 10 items |
+
+### 21.2 Media Analysis Pipeline
+
+```
+Media File (video/image)
+        │
+        v
+┌───────────────────────────┐
+│   Gemini Flash 3.0        │
+│   • Extract locations     │
+│   • Identify activities   │
+│   • Detect vibes/themes   │
+│   • Transcribe audio      │
+└───────────────────────────┘
+        │
+        v
+┌───────────────────────────┐
+│   Prompt Synthesizer      │
+│   • Merge user text       │
+│   • Combine extracted     │
+│     locations/activities  │
+│   • Generate session      │
+└───────────────────────────┘
+```
+
+### 21.3 Media Analysis Schema
+
+```typescript
+interface MediaAnalysis {
+  mediaType: 'video' | 'image';
+  locations: Array<{
+    name: string;
+    type: 'place' | 'restaurant' | 'beach' | 'city' | 'country';
+    confidence: number;  // 0-1
+  }>;
+  activities: string[];
+  vibes: string[];
+  transcript?: string;      // For videos with audio
+  summary: string;
+  processingTimeMs: number;
+}
+```
+
+### 21.4 Prompt Synthesis
+
+The synthesizer merges multiple inputs into a unified discovery prompt:
+
+1. User's text message (if provided)
+2. Locations extracted from media
+3. Activities and vibes detected
+4. Practical info (best time, price range)
+
+**Output:** A `SynthesizedPrompt` that feeds into the existing Stage 00 Enhancement flow.
+
+---
+
+## 22. HTML Output Generation
+
+> For complete details, see [telegram-architecture-v2.md](./telegram-architecture-v2.md) Section 11
+
+### 22.1 Output Strategy
+
+Results are published as **self-contained static HTML** to Vercel Blob:
+
+```
+https://[blob-store].public.blob.vercel-storage.com/sessions/{session-id}.html
+```
+
+### 22.2 HTML Features
+
+- **Self-contained** - All CSS inline, no external dependencies
+- **Mobile-first** - Responsive design, touch-friendly
+- **Client-side filtering** - JavaScript for type/status filtering
+- **Dark mode** - Respects `prefers-color-scheme`
+- **Print-friendly** - Clean print stylesheet
+- **Accessible** - Semantic HTML, ARIA labels
+
+### 22.3 Content Security Policy
+
+```html
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' https: data:;
+  connect-src 'none';
+  frame-src 'none';
+">
+```
+
+### 22.4 Template Structure
+
+The HTML template includes:
+- Session metadata (destinations, dates, interests)
+- Discovery summary with highlights
+- Ranked candidates with filtering
+- Source attribution and confidence levels
+- Cost breakdown (optional)
+- Triage state (if any)
+
+---
+
+## 23. Mac Studio Operations
+
+> For complete details, see [telegram-architecture-v2.md](./telegram-architecture-v2.md) Section 8
+
+### 23.1 Service Management
+
+Services are managed via **launchd** for reliability:
+
+| Service | Purpose | Config |
+|---------|---------|--------|
+| `com.travelagent.worker` | Job poller + processor | `RunAtLoad`, `KeepAlive` |
+| `com.travelagent.cleanup` | Media/log cleanup | Scheduled (cron-style) |
+
+### 23.2 Directory Structure
+
+```
+~/.travelagent/
+├── config/
+│   └── .env                    # API keys (chmod 600)
+├── sessions/                   # Discovery sessions
+│   └── {session-id}/
+│       └── runs/
+├── media/                      # Downloaded media files
+│   └── {jobId}/
+│       ├── video.mp4
+│       └── analysis.json
+├── jobs/                       # Local job state backup
+│   ├── active/
+│   ├── completed/
+│   └── failed/
+├── logs/
+│   ├── worker.log
+│   └── error.log
+└── exports/                    # Generated HTML copies
+```
+
+### 23.3 Retention Policy
+
+| Data Type | Retention | Cleanup |
+|-----------|-----------|---------|
+| Media files | 7 days after job completion | Scheduled job |
+| Session data | Indefinite | Manual archive |
+| Local HTML copies | 30 days | Scheduled job |
+| Logs | 7 days, max 100MB | Log rotation |
+| Failed job records | 30 days | Scheduled job |
+
+### 23.4 Operational Checklist
+
+| Concern | Solution |
+|---------|----------|
+| Auto-start on boot | launchd `RunAtLoad=true` |
+| Auto-restart on crash | launchd `KeepAlive=true` |
+| Prevent sleep during jobs | `caffeinate -i` during processing |
+| Disk monitoring | Alert at 80% usage |
+| Remote access | Tailscale for emergency SSH (optional) |
+
+---
+
+## 24. Job Queue & Processing
+
+> For complete details, see [telegram-architecture-v2.md](./telegram-architecture-v2.md) Sections 4-6
+
+### 24.1 Job Queue Infrastructure
+
+Jobs are stored in **Vercel KV** with the following lifecycle:
+
+```
+┌─────────┐    ┌───────────┐    ┌────────────┐    ┌──────────┐
+│ QUEUED  │───>│PROCESSING │───>│ COMPLETED  │    │  FAILED  │
+└─────────┘    └─────┬─────┘    └────────────┘    └────▲─────┘
+                     │                                  │
+                     └──────── (attempts < 3) ──────────┘
+```
+
+### 24.2 Job Status States
+
+```typescript
+type JobStatus =
+  | 'queued'              // Waiting for worker
+  | 'downloading_media'   // Fetching from Telegram
+  | 'analyzing'           // Gemini processing
+  | 'synthesizing'        // Merging inputs
+  | 'running_pipeline'    // Discovery stages 00-10
+  | 'publishing'          // Uploading to Blob
+  | 'completed'           // Done successfully
+  | 'failed';             // Exhausted retries
+```
+
+### 24.3 Polling Model
+
+The Mac worker uses a **poll-based** approach (no inbound connectivity required):
+
+1. Poll Vercel KV every 5 seconds for `status='queued'` jobs
+2. Atomically acquire lease (5 minute timeout)
+3. Process job through pipeline
+4. Update status at each checkpoint
+5. On completion: upload HTML, notify user, clear lease
+
+### 24.4 Lease-Based Processing
+
+- Worker acquires a lease before processing
+- If worker crashes, lease expires automatically
+- Job becomes available for retry after lease expiry
+- Prevents duplicate processing without explicit locking
+
+### 24.5 Retry Strategy
+
+| Component | Max Retries | Base Delay | Max Delay |
+|-----------|-------------|------------|-----------|
+| Telegram download | 3 | 1s | 10s |
+| Gemini API | 3 | 2s | 30s |
+| Vercel Blob upload | 3 | 1s | 8s |
+| Job-level | 3 | immediate re-queue | - |
+
+### 24.6 Graceful Degradation
+
+| Failure | Degraded Behavior |
+|---------|-------------------|
+| Gemini fails | Fall back to text-only prompt |
+| One worker fails | Continue with other workers |
+| Aggregator fails | Return raw ranked candidates |
+| Blob upload fails | Save locally, provide `/download` command |
+
+---
+
+## 25. Delivery Plan (Implementation Slices)
 
 ### Slice A: Foundations (Week 1)
 
@@ -2419,7 +2721,7 @@ RESULT: PASS
 
 ---
 
-## 21. Risks and Mitigations
+## 26. Risks and Mitigations
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
@@ -2434,7 +2736,7 @@ RESULT: PASS
 
 ---
 
-## 22. Resolved Questions
+## 27. Resolved Questions
 
 ### Q1: Which Places provider is preferred for Phase 0?
 **Decision:** Google Places API
@@ -2496,7 +2798,7 @@ RESULT: PASS
 
 ---
 
-## 23. API Keys and Secrets
+## 28. API Keys and Secrets
 
 ### Required Environment Variables
 
@@ -3232,4 +3534,4 @@ Output:
 
 *End of Phase 0 PRD — Travel Discovery Orchestrator (CLI-first)*
 
-**Version 1.2** — Added Prompt Enhancement (Stage 00) with interactive clarification, extracted session parameters, and graceful degradation.
+**Version 1.3** — Added Telegram Interface Architecture (Sections 20-24): hybrid Vercel webhook + Mac Studio worker architecture, multimodal input processing with Gemini, HTML output generation, Mac Studio operations, and job queue processing.

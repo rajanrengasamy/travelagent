@@ -205,3 +205,221 @@ Ran QA review on Section 2.0 (Schema Definitions & Versioning System) using the 
 Section 2.0 QA is complete. All 25 PRD-specified schemas are now fully compliant with PRD Section 12. The RunConfig schema was missing 3 enhancement-related fields which have been added. Error handling in the migration framework has been improved. All 390 tests pass. Next task is 3.0 (Storage Layer Implementation).
 
 ---
+
+## Session: 2026-01-05 20:32 AEST
+
+### Summary
+Architecture planning session for a major pivot: adding Telegram as the primary interface with multimodal input (text, video, image) before building a web interface. Created comprehensive architecture proposal document covering system design, data flows, new components, and PRD changes required.
+
+### Work Completed
+- Ran `/startagain` to load session context from VectorDB
+- Confirmed that Task 18.0 (Results Generation) completes the core discovery pipeline
+- Designed Telegram-first architecture with multimodal input processing
+- Created system architecture diagrams showing Telegram Bot → Multimodal Processor → Pipeline → HTML Output
+- Defined data flow diagrams for 4 input scenarios (text, video, image+text, multi-video)
+- Designed Telegram conversation flow with example interactions
+- Defined new component structure (`src/telegram/`, `src/multimodal/`, `src/output/`)
+- Created new schema definitions (TelegramUser, TelegramChatContext, MediaInput, SynthesizedPrompt)
+- Designed Gemini Flash 3.0 video analysis prompt for travel content extraction
+- Designed static HTML output template structure for Vercel hosting
+- Outlined deployment architecture (Vercel Functions + Blob storage)
+- Identified 5 key decisions needed before implementation
+- Defined new Tasks 29.0-35.0 for Phase 1 (Telegram)
+- Created `docs/telegram-architecture-proposal.md` (comprehensive proposal document)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| No issues - planning session | N/A | N/A |
+
+### Key Decisions
+- **Core pipeline unchanged** - Tasks 1-18 remain exactly as defined; Telegram adds input/output layers only
+- **Two interfaces planned** - Telegram (Phase 1) and Web (Phase 2, future)
+- **Multimodal input via Gemini Flash 3.0** - Video/image analysis to extract locations, activities, vibes, transcripts
+- **Static HTML on Vercel** - Each discovery session generates a self-contained HTML file, no backend needed for viewing
+- **Triage via Telegram** - Initial version will handle triage through chat commands, not HTML interactivity
+
+### Learnings
+- Telegram is a "poor man's app" - no app store approval, instant deployment, works on all devices
+- Static HTML on Vercel is free and provides shareable results without server costs
+- Multimodal input is killer for travel - "show me more places like this video" is more natural than typing descriptions
+- The architecture separates concerns well: ingestion layer → shared pipeline → output layer
+
+### Open Items / Blockers
+- [ ] Task 3.0: Storage Layer Implementation (next coding task)
+- [ ] Decide on deployment platform for Telegram bot (Vercel Functions vs Railway/Fly.io)
+- [ ] Decide on video processing approach (full download vs key frames)
+- [ ] Decide on session storage (local filesystem vs Vercel KV)
+- [ ] Decide on allowlisting strategy (env vars vs database)
+- [ ] Decide on HTML interactivity level (pure static vs local storage)
+
+### Context for Next Session
+This was a planning session that produced `docs/telegram-architecture-proposal.md` - a comprehensive architecture proposal for adding Telegram as the primary interface. The core discovery pipeline (Tasks 1-18) remains unchanged; the Telegram interface adds multimodal input processing and static HTML output.
+
+**Immediate next step:** Continue with Task 3.0 (Storage Layer Implementation) to complete the core pipeline. The Telegram work (Tasks 29.0-35.0) can begin after Task 18.0 is complete, or in parallel if desired.
+
+**Key document:** `docs/telegram-architecture-proposal.md` contains all architecture diagrams, data flows, component structures, and decisions for future reference.
+
+---
+
+## Session: 2026-01-05 21:50 AEDT
+
+### Summary
+Architecture refinement session that produced Telegram Architecture v2 (`docs/telegram-architecture-v2.md`), a comprehensive 1527-line specification incorporating Mac Studio as orchestrator with hybrid Vercel deployment. Updated PRD to v1.3 with 5 new sections and TODO with Phase 1 tasks (48 subtasks). Re-seeded VectorDB with updated documents.
+
+### Work Completed
+- Reviewed and synthesized two architecture proposals (`telegram-architecture-proposal.md` and `telegram-architecture-proposal-codex.md`)
+- Created `docs/telegram-architecture-v2.md` (1527 lines) with comprehensive specification:
+  - 14 sections: Executive Summary, Architecture Principles, System Architecture, Component Deep Dive, Data Flow, Data Models, Telegram Bot Design, Mac Studio Operations, Security Model, Failure Modes, Publishing Strategy, Implementation Tasks, Decision Log, Risk Register
+  - Hybrid architecture: Vercel (webhook + static hosting) + Mac Studio (worker + state store)
+  - Async job model with lease-based processing and crash recovery
+- Added clarification: Mac Studio is orchestrator only (NOT inference server) - all LLM calls via cloud APIs
+- Added clarification: No port forwarding required - Mac only makes outbound HTTPS calls
+- Updated `docs/phase_0_prd_unified.md` to v1.3:
+  - Added 5 new sections (20-24): Telegram Interface, Multimodal Input, HTML Output, Mac Studio Ops, Job Queue
+  - Renumbered existing sections 20-23 → 25-28
+  - Updated Table of Contents
+- Updated `todo/tasks-phase0-travel-discovery.md`:
+  - Added Phase 1 section after Task 28.0
+  - Added Tasks 29.0-36.0 (8 task groups, 48 subtasks total)
+- Re-seeded VectorDB: 36 PRD sections, 1 TODO snapshot indexed
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| User concerned about local LLM hosting | Clarified Mac Studio is orchestrator only, all inference via cloud APIs | Resolved |
+| User doesn't know port forwarding | Architecture uses outbound polling - no port forwarding needed | Resolved |
+| VectorDB journal seeding failed | Date parsing issue with 2026 dates - minor, PRD/TODO indexed successfully | Open |
+
+### Key Decisions
+- **Option B Architecture**: Managed webhook front door (Vercel) + Mac worker polling for jobs
+- **Mac Studio role**: Orchestrator only - runs worker process, calls cloud APIs, stores state, generates HTML
+- **No port forwarding**: Mac polls Vercel KV for jobs instead of receiving webhooks directly
+- **Lease-based processing**: Worker acquires lease before processing, prevents duplicates, enables crash recovery
+- **Idempotency keys**: `sha256(chatId:messageId)` for job deduplication
+- **Command-first UX**: `/start`, `/status`, `/retry`, `/history` commands (not LLM conversation)
+
+### Learnings
+- Hybrid architecture (serverless webhook + durable worker) provides best of both worlds: reliability + capability
+- Polling architecture eliminates home network configuration complexity entirely
+- Lease-based job processing enables graceful crash recovery without message loss
+- Parallel agents (3 agents) effective for independent document updates
+
+### Open Items / Blockers
+- [ ] Task 3.0: Storage Layer Implementation (next coding task for core pipeline)
+- [ ] Fix VectorDB journal seeding date parsing issue
+- [ ] Tasks 29.0-36.0: Phase 1 Telegram implementation (after core pipeline complete)
+
+### Context for Next Session
+Telegram Architecture v2 is complete and documented. The hybrid architecture uses:
+- **Vercel**: Webhook endpoint, static HTML hosting, Vercel KV job queue
+- **Mac Studio**: Durable worker polling for jobs, session state storage, HTML generation
+
+PRD and TODO are updated with all Telegram-related sections and tasks. The core pipeline (Tasks 1-18) remains the priority. Phase 1 Telegram work (Tasks 29-36) can begin after Task 18.0 is complete.
+
+**Key documents:**
+- `docs/telegram-architecture-v2.md` - Comprehensive architecture specification
+- `docs/phase_0_prd_unified.md` (v1.3) - Updated with sections 20-24
+- `todo/tasks-phase0-travel-discovery.md` - Updated with Phase 1 tasks 29.0-36.0
+
+---
+
+## Session: 2026-01-05 21:58 AEDT
+
+### Summary
+Fixed VectorDB journal seeding bug where timezone abbreviations (AEST/AEDT) caused "Invalid time value" errors. Added `parseJournalDate()` function with timezone mapping and comprehensive tests. All 6 journal entries now index successfully.
+
+### Work Completed
+- Created `parseJournalDate()` function in `src/context/seed.ts` to handle timezone abbreviations
+- Added `TIMEZONE_OFFSETS` mapping for Australian timezones (AEST, AEDT, ACST, ACDT, AWST) and common international ones (UTC, GMT, EST, EDT, PST, PDT)
+- Updated `seedExistingJournal()` to use new parsing function instead of raw `new Date()`
+- Added 9 new test cases for `parseJournalDate()` in `src/context/seed.test.ts`
+- Verified fix with `npm run seed-context` - all 6 journal entries indexed successfully
+- All 398 tests pass
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| JavaScript Date() can't parse "AEST"/"AEDT" | Created `parseJournalDate()` with timezone abbreviation → UTC offset mapping | Resolved |
+| Test used `jest.spyOn` in ESM (undefined) | Replaced with manual console.warn capture | Resolved |
+
+### Key Decisions
+- Map timezone abbreviations to UTC offsets rather than using a heavy library like `date-fns-tz`
+- Construct ISO 8601 string (`YYYY-MM-DDTHH:MM:SS±HH:MM`) which JavaScript reliably parses
+- Fallback chain: custom parsing → native Date parsing → current time with warning
+
+### Learnings
+- JavaScript's `Date` constructor only reliably parses ISO 8601 and a few legacy formats
+- Timezone abbreviations are ambiguous globally (e.g., "AST" could be Atlantic, Arabia, or Alaska)
+- Pattern `YYYY-MM-DDTHH:MM:SS±HH:MM` is universally parseable without external libraries
+
+### Open Items / Blockers
+- [ ] Task 3.0: Storage Layer Implementation (next major task)
+- [ ] Tasks 29.0-36.0: Phase 1 Telegram implementation
+
+### Context for Next Session
+The journal date parsing bug is fixed. VectorDB now successfully indexes all journal entries with AEST/AEDT timestamps. The project has 398 passing tests.
+
+Next priority is Task 3.0 (Storage Layer Implementation) to continue building the core discovery pipeline. The storage layer will provide path utilities, atomic writes, and CRUD operations for sessions, runs, stages, and triage data.
+
+---
+
+## Session: 2026-01-05 22:12 AEDT
+
+### Summary
+Completed Task 3.1 (Path Resolution Utilities) for the Storage Layer. Created `src/storage/paths.ts` with 16 path helper functions (5 required + 11 bonus) and comprehensive test coverage. All 438 tests now pass.
+
+### Work Completed
+- Created `src/storage/paths.ts` with 16 path resolution functions:
+  - **Required (5)**: `getDataDir()`, `getSessionDir()`, `getRunDir()`, `getStageFilePath()`, `getLatestRunSymlink()`
+  - **Bonus (11)**: `getSessionsDir()`, `getRunsDir()`, `getSessionJsonPath()`, `getTriageFilePath()`, `getEnhancementFilePath()`, `getRunConfigPath()`, `getManifestPath()`, `getGlobalConfigPath()`, `getExportsDir()`, `getResultsJsonPath()`, `getResultsMdPath()`
+- Created `src/storage/paths.test.ts` with 40 comprehensive tests covering:
+  - Environment variable handling (`TRAVELAGENT_DATA_DIR`)
+  - Tilde expansion (`~/custom/path`)
+  - Relative path resolution (`./data`)
+  - Empty/whitespace input validation
+  - Path hierarchy consistency
+  - Absolute path verification for all functions
+- Updated `todo/tasks-phase0-travel-discovery.md` to mark Task 3.1 and all 5 subtasks complete
+- All 438 tests pass (398 existing + 40 new)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| `toEndWith` is not a standard Jest matcher | Changed tests to use `expect(result.endsWith(...)).toBe(true)` | Resolved |
+
+### Key Decisions
+- Added 11 bonus helper functions beyond the 5 required - anticipates needs of Tasks 3.3-3.6
+- Environment variable `TRAVELAGENT_DATA_DIR` takes precedence over default `~/.travelagent`
+- Empty strings treated as "not set" - returns default path
+- All path functions throw descriptive errors for empty/whitespace IDs
+- Directory structure follows PRD Section 13: `~/.travelagent/sessions/<session_id>/runs/<run_id>/`
+
+### Learnings
+- Node.js `path.resolve()` handles relative paths correctly when no base is provided (uses cwd)
+- Tilde expansion requires manual handling - `os.homedir()` + slice pattern
+- Path hierarchy tests ensure consistency across all related functions
+- Bonus helpers reduce future work and ensure consistent path generation throughout codebase
+
+### Open Items / Blockers
+- [ ] Task 3.2: Atomic write utilities (`src/storage/atomic.ts`)
+- [ ] Task 3.3: Session CRUD operations (`src/storage/sessions.ts`)
+- [ ] Task 3.4: Run management (`src/storage/runs.ts`)
+- [ ] Task 3.5: Stage file operations (`src/storage/stages.ts`)
+- [ ] Task 3.6: Triage persistence (`src/storage/triage.ts`)
+- [ ] Task 3.7: Config persistence (`src/storage/config.ts`)
+
+### Context for Next Session
+Task 3.1 is complete with 16 path helper functions and 40 tests. The path utilities provide the foundation for all subsequent storage layer tasks.
+
+**Remaining Task 3.0 work:**
+- Task 3.2: `atomic.ts` - Atomic write wrappers with temp file + rename pattern
+- Task 3.3: `sessions.ts` - Session CRUD (create, read, list, archive)
+- Task 3.4: `runs.ts` - Run creation, symlink management, run listing
+- Task 3.5: `stages.ts` - Stage file read/write with validation
+- Task 3.6: `triage.ts` - Triage state persistence
+- Task 3.7: `config.ts` - Global config read/write
+
+**Recommended next step:** Use `/develop 3.2-3.7` with 5 parallel agents to complete the remaining Storage Layer tasks, as they are independent and well-defined.
+
+---

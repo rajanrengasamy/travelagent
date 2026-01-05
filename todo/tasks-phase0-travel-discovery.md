@@ -380,12 +380,12 @@ Update the file after completing each sub-task, not just after completing an ent
 ---
 
 - [ ] **3.0 Storage Layer Implementation**
-  - [ ] 3.1 Create `src/storage/paths.ts` with path resolution utilities:
-    - [ ] 3.1.1 Implement `getDataDir()` using `TRAVELAGENT_DATA_DIR` env var or default `~/.travelagent/`
-    - [ ] 3.1.2 Implement `getSessionDir(sessionId: string)` returning session directory path
-    - [ ] 3.1.3 Implement `getRunDir(sessionId: string, runId: string)` returning run directory path
-    - [ ] 3.1.4 Implement `getStageFilePath(sessionId: string, runId: string, stageId: string)` returning stage file path
-    - [ ] 3.1.5 Implement `getLatestRunSymlink(sessionId: string)` returning latest symlink path
+  - [x] 3.1 Create `src/storage/paths.ts` with path resolution utilities:
+    - [x] 3.1.1 Implement `getDataDir()` using `TRAVELAGENT_DATA_DIR` env var or default `~/.travelagent/`
+    - [x] 3.1.2 Implement `getSessionDir(sessionId: string)` returning session directory path
+    - [x] 3.1.3 Implement `getRunDir(sessionId: string, runId: string)` returning run directory path
+    - [x] 3.1.4 Implement `getStageFilePath(sessionId: string, runId: string, stageId: string)` returning stage file path
+    - [x] 3.1.5 Implement `getLatestRunSymlink(sessionId: string)` returning latest symlink path
   - [ ] 3.2 Create `src/storage/atomic.ts` with atomic write implementation:
     - [ ] 3.2.1 Implement `atomicWriteJson(filePath: string, data: unknown)` using temp file + rename pattern
     - [ ] 3.2.2 Ensure parent directories are created if they don't exist
@@ -1145,9 +1145,77 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
+### Phase 1 — Telegram Interface
+
+- [ ] **29.0 Vercel Webhook Setup**
+  - [ ] 29.1 Create Vercel project with API route
+  - [ ] 29.2 Implement webhook handler with verification
+  - [ ] 29.3 Set up Vercel KV for job queue
+  - [ ] 29.4 Implement allowlist check
+  - [ ] 29.5 Implement rate limiting
+  - [ ] 29.6 Add deduplication logic
+  - [ ] 29.7 Write tests for webhook handler
+
+- [ ] **30.0 Mac Worker Infrastructure**
+  - [ ] 30.1 Create job poller with lease acquisition
+  - [ ] 30.2 Implement job processor orchestrator
+  - [ ] 30.3 Create launchd plist for auto-start
+  - [ ] 30.4 Implement health check and heartbeat
+  - [ ] 30.5 Set up log rotation
+  - [ ] 30.6 Write integration tests for poller
+
+- [ ] **31.0 Media Processing**
+  - [ ] 31.1 Implement Telegram file downloader
+  - [ ] 31.2 Create Gemini video analyzer
+  - [ ] 31.3 Create Gemini image analyzer
+  - [ ] 31.4 Implement prompt synthesizer
+  - [ ] 31.5 Add media analysis caching
+  - [ ] 31.6 Write tests for media processing
+
+- [ ] **32.0 HTML Output Generation**
+  - [ ] 32.1 Create HTML template structure
+  - [ ] 32.2 Implement template engine integration
+  - [ ] 32.3 Add client-side filtering JavaScript
+  - [ ] 32.4 Implement cost breakdown display
+  - [ ] 32.5 Add responsive/mobile styles
+  - [ ] 32.6 Write tests for HTML generation
+
+- [ ] **33.0 Vercel Blob Publishing**
+  - [ ] 33.1 Set up Vercel Blob storage
+  - [ ] 33.2 Implement blob upload function
+  - [ ] 33.3 Add local fallback for upload failures
+  - [ ] 33.4 Implement cleanup for old blobs
+  - [ ] 33.5 Write tests for publishing
+
+- [ ] **34.0 Telegram Bot Commands**
+  - [ ] 34.1 Implement /start and /help
+  - [ ] 34.2 Implement /status command
+  - [ ] 34.3 Implement /cancel command
+  - [ ] 34.4 Implement /retry command
+  - [ ] 34.5 Implement /history command
+  - [ ] 34.6 Add admin commands (add/remove user)
+  - [ ] 34.7 Write tests for commands
+
+- [ ] **35.0 Operational Setup**
+  - [ ] 35.1 Configure Mac for always-on operation
+  - [ ] 35.2 Set up secrets in .env
+  - [ ] 35.3 Configure Tailscale for remote access
+  - [ ] 35.4 Set up disk monitoring alerts
+  - [ ] 35.5 Create backup script
+  - [ ] 35.6 Write operational runbook
+
+- [ ] **36.0 End-to-End Testing**
+  - [ ] 36.1 Test full flow: text input -> results
+  - [ ] 36.2 Test full flow: video input -> results
+  - [ ] 36.3 Test failure recovery scenarios
+  - [ ] 36.4 Test rate limiting and allowlist
+  - [ ] 36.5 Load test with concurrent jobs
+
+---
+
 ## Summary
 
-This task list covers the complete Phase 0 implementation of the Travel Discovery Orchestrator CLI as specified in the PRD. The tasks are organized to build foundational components first, then layer on increasingly complex functionality.
+This task list covers the complete Phase 0 implementation of the Travel Discovery Orchestrator CLI as specified in the PRD, plus Phase 1 Telegram Interface tasks. The tasks are organized to build foundational components first, then layer on increasingly complex functionality.
 
 **Key Implementation Order:**
 1. Tasks 0-4: Foundation (project setup, schemas, storage, pipeline infrastructure)
@@ -1157,6 +1225,17 @@ This task list covers the complete Phase 0 implementation of the Travel Discover
 5. Tasks 19-21: Supporting systems (cost, triage, export)
 6. Tasks 22-25: CLI implementation
 7. Tasks 26-28: Error handling, evaluation, and polish
+8. Tasks 29-36: Phase 1 Telegram Interface (webhook, worker, media processing, publishing)
+
+**Phase 1 Telegram Interface (Tasks 29-36):**
+- Task 29: Vercel webhook endpoint setup with job queue
+- Task 30: Mac worker infrastructure for job processing
+- Task 31: Media processing (video/image analysis via Gemini)
+- Task 32: HTML output generation for shareable results
+- Task 33: Vercel Blob publishing for static hosting
+- Task 34: Telegram bot commands (/start, /status, /retry, etc.)
+- Task 35: Operational setup (launchd, monitoring, backups)
+- Task 36: End-to-end testing of full Telegram flow
 
 **Critical Dependencies:**
 - Schemas (Task 2) must be complete before storage (Task 3)
@@ -1164,3 +1243,4 @@ This task list covers the complete Phase 0 implementation of the Travel Discover
 - Pipeline infrastructure (Task 4) must be complete before any stages
 - Worker framework (Task 8) must be complete before individual workers (Tasks 9-11)
 - All workers and processing stages must be complete before CLI run command (Task 24)
+- Phase 0 CLI (Tasks 1-28) should be substantially complete before Phase 1 Telegram tasks

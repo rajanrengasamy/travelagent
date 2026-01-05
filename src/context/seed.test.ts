@@ -9,6 +9,7 @@
 
 import {
   parseJournalEntries,
+  parseJournalDate,
   DEFAULT_SEED_PATHS,
   type SeedResult,
   type SeedAllResult,
@@ -142,6 +143,79 @@ The actual first session.
     });
   });
 
+  describe('parseJournalDate', () => {
+    it('should parse AEST timezone correctly', () => {
+      const result = parseJournalDate('2026-01-02 21:41 AEST');
+      // AEST is UTC+10, so 21:41 AEST = 11:41 UTC
+      expect(result).toBe('2026-01-02T11:41:00.000Z');
+    });
+
+    it('should parse AEDT timezone correctly', () => {
+      const result = parseJournalDate('2026-01-05 21:50 AEDT');
+      // AEDT is UTC+11, so 21:50 AEDT = 10:50 UTC
+      expect(result).toBe('2026-01-05T10:50:00.000Z');
+    });
+
+    it('should parse lowercase timezone abbreviations', () => {
+      const result = parseJournalDate('2026-01-02 10:00 aest');
+      // Should work case-insensitively
+      expect(result).toBe('2026-01-02T00:00:00.000Z');
+    });
+
+    it('should handle US timezones', () => {
+      const result = parseJournalDate('2026-01-02 14:00 PST');
+      // PST is UTC-8, so 14:00 PST = 22:00 UTC
+      expect(result).toBe('2026-01-02T22:00:00.000Z');
+    });
+
+    it('should handle UTC timezone', () => {
+      const result = parseJournalDate('2026-01-02 12:00 UTC');
+      expect(result).toBe('2026-01-02T12:00:00.000Z');
+    });
+
+    it('should fallback to native parsing for ISO 8601 strings', () => {
+      const result = parseJournalDate('2026-01-02T12:00:00.000Z');
+      expect(result).toBe('2026-01-02T12:00:00.000Z');
+    });
+
+    it('should return current time for unparseable dates', () => {
+      // Suppress console.warn for this test
+      const originalWarn = console.warn;
+      const warnCalls: string[] = [];
+      console.warn = (msg: string) => warnCalls.push(msg);
+
+      const before = Date.now();
+      const result = parseJournalDate('invalid date string');
+      const after = Date.now();
+
+      // Result should be a valid ISO string within the test execution window
+      const resultTime = new Date(result).getTime();
+      expect(resultTime).toBeGreaterThanOrEqual(before);
+      expect(resultTime).toBeLessThanOrEqual(after);
+
+      // Should have warned about unparseable date
+      expect(warnCalls.length).toBeGreaterThan(0);
+      expect(warnCalls[0]).toContain('Could not parse date');
+
+      // Restore console.warn
+      console.warn = originalWarn;
+    });
+
+    it('should handle all Australian timezones', () => {
+      // ACST - Australian Central Standard Time (UTC+9:30)
+      const acst = parseJournalDate('2026-01-02 10:00 ACST');
+      expect(acst).toBe('2026-01-02T00:30:00.000Z');
+
+      // ACDT - Australian Central Daylight Time (UTC+10:30)
+      const acdt = parseJournalDate('2026-01-02 10:00 ACDT');
+      expect(acdt).toBe('2026-01-01T23:30:00.000Z');
+
+      // AWST - Australian Western Standard Time (UTC+8)
+      const awst = parseJournalDate('2026-01-02 10:00 AWST');
+      expect(awst).toBe('2026-01-02T02:00:00.000Z');
+    });
+  });
+
   describe('DEFAULT_SEED_PATHS', () => {
     it('should have correct default paths', () => {
       expect(DEFAULT_SEED_PATHS.PRD).toBe('docs/phase_0_prd_unified.md');
@@ -205,6 +279,7 @@ The actual first session.
       expect(typeof seed.seedExistingJournal).toBe('function');
       expect(typeof seed.seedAll).toBe('function');
       expect(typeof seed.parseJournalEntries).toBe('function');
+      expect(typeof seed.parseJournalDate).toBe('function');
       expect(typeof seed.ensureContextDirs).toBe('function');
     });
   });
