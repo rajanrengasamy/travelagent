@@ -29,6 +29,24 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 
 /**
+ * Validates an ID string to prevent path traversal attacks.
+ *
+ * Rejects IDs containing:
+ * - `..` (parent directory traversal)
+ * - `/` (forward slash - Unix path separator)
+ * - `\` (backslash - Windows path separator)
+ *
+ * @param id - The ID to validate
+ * @param idName - Name of the ID for error messages (e.g., 'sessionId', 'runId')
+ * @throws {Error} If the ID contains path traversal characters
+ */
+function validateIdSecurity(id: string, idName: string): void {
+  if (id.includes('..') || id.includes('/') || id.includes('\\')) {
+    throw new Error(`${idName} contains invalid characters (path traversal not allowed)`);
+  }
+}
+
+/**
  * Gets the root data directory for the application.
  *
  * Uses the `TRAVELAGENT_DATA_DIR` environment variable if set,
@@ -95,6 +113,7 @@ export function getSessionDir(sessionId: string): string {
   if (!sessionId || sessionId.trim() === '') {
     throw new Error('sessionId is required');
   }
+  validateIdSecurity(sessionId, 'sessionId');
 
   return path.join(getSessionsDir(), sessionId);
 }
@@ -134,6 +153,8 @@ export function getRunDir(sessionId: string, runId: string): string {
   if (!runId || runId.trim() === '') {
     throw new Error('runId is required');
   }
+  validateIdSecurity(sessionId, 'sessionId');
+  validateIdSecurity(runId, 'runId');
 
   return path.join(getRunsDir(sessionId), runId);
 }
@@ -165,6 +186,9 @@ export function getStageFilePath(sessionId: string, runId: string, stageId: stri
   if (!stageId || stageId.trim() === '') {
     throw new Error('stageId is required');
   }
+  validateIdSecurity(sessionId, 'sessionId');
+  validateIdSecurity(runId, 'runId');
+  validateIdSecurity(stageId, 'stageId');
 
   // Ensure .json extension
   const fileName = stageId.endsWith('.json') ? stageId : `${stageId}.json`;
@@ -191,6 +215,7 @@ export function getLatestRunSymlink(sessionId: string): string {
   if (!sessionId || sessionId.trim() === '') {
     throw new Error('sessionId is required');
   }
+  validateIdSecurity(sessionId, 'sessionId');
 
   return path.join(getRunsDir(sessionId), 'latest');
 }

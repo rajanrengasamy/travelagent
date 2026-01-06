@@ -14,16 +14,87 @@ This could be:
 - A feature description (e.g., "add retry logic to all API calls")
 - A specific task (e.g., "implement the YouTube worker")
 
+## Phase 0: VectorDB Context Retrieval (REQUIRED)
+
+**IMPORTANT**: Before reading any markdown files, you MUST first attempt to retrieve context from the vector database.
+
+### Step 0.1: Check VectorDB Availability
+
+```bash
+ls ~/.travelagent/context/lancedb/ 2>/dev/null || echo "VectorDB not available"
+```
+
+### Step 0.2: If VectorDB Available - Use Retrieval API
+
+```typescript
+// IMPORTANT: Load .env first for API keys
+import 'dotenv/config';
+
+import {
+  queryPrdSections,
+  getCurrentTodoState,
+  queryJournalEntries
+} from './src/context/retrieval.js';
+
+// Get relevant context based on the development request
+const prdSections = await queryPrdSections("$ARGUMENTS requirements", 5);
+const todoState = await getCurrentTodoState();
+const history = await queryJournalEntries("$ARGUMENTS", 3);
+
+console.log("=== RELEVANT PRD SECTIONS ===");
+prdSections.forEach(s => console.log(`${s.id}: ${s.title}\n${s.content.substring(0, 1500)}\n`));
+
+console.log("=== CURRENT TODO STATE ===");
+if (todoState) {
+  console.log(`Overall Progress: ${todoState.overallCompletionPct}%`);
+  todoState.sections.forEach(s => console.log(`  ${s.name}: ${s.completionPct}%`));
+}
+
+console.log("=== HISTORICAL CONTEXT ===");
+history.forEach(e => console.log(`${e.timestamp}: ${e.summary}`));
+```
+
+### Step 0.3: Staleness Check
+
+**IMPORTANT**: Check if VectorDB is stale by comparing timestamps:
+
+```bash
+# Get file modification times
+TODO_MTIME=$(stat -f %m todo/tasks-phase0-travel-discovery.md 2>/dev/null || stat -c %Y todo/tasks-phase0-travel-discovery.md 2>/dev/null)
+PRD_MTIME=$(stat -f %m docs/phase_0_prd_unified.md 2>/dev/null || stat -c %Y docs/phase_0_prd_unified.md 2>/dev/null)
+echo "File mtimes - TODO: $TODO_MTIME, PRD: $PRD_MTIME"
+
+# Get VectorDB collection times
+ls -la ~/.travelagent/context/lancedb/*/*.lance 2>/dev/null | head -3
+```
+
+If files are newer than VectorDB, warn:
+```
+⚠️ VectorDB may be STALE - run `npm run seed-context` to re-index
+```
+
+### Step 0.4: Fallback Warning
+
+If VectorDB is NOT available:
+```
+⚠️ VectorDB not available - reading files directly (may be stale)
+Run `npm run seed-context` to index the latest context.
+```
+
+---
+
 ## Phase 1: Understand the Request
 
+**Note**: If Phase 0 successfully retrieved context from VectorDB, use that data. Only read files if VectorDB was unavailable.
+
 1. **If a section number is provided:**
-   - Read `todo/tasks-phase0-travel-discovery.md` and extract all tasks from that section
-   - Read `docs/phase_0_prd_unified.md` for relevant requirements
+   - Use VectorDB TODO state or read `todo/tasks-phase0-travel-discovery.md` to extract tasks
+   - Use VectorDB PRD sections or read `docs/phase_0_prd_unified.md` for requirements
    - Identify existing files that relate to this section
 
 2. **If a feature/task description is provided:**
-   - Read `docs/phase_0_prd_unified.md` to understand how it fits the product
-   - Read `todo/tasks-phase0-travel-discovery.md` to see if it's already documented
+   - Query VectorDB for relevant PRD sections or read the full PRD
+   - Query VectorDB for TODO state or read the TODO file
    - Search the codebase for related existing code
 
 3. **Create a development brief:**

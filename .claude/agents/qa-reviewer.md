@@ -30,9 +30,45 @@ You perform deep quality assurance reviews of completed TODO sections for the Tr
 
 You will receive a section number to review. Your job is to:
 
-1. **Load Context**:
+1. **Load Context** (VectorDB-First Approach):
+
+   **Step 1.1: Check VectorDB availability**
+   ```bash
+   ls ~/.travelagent/context/lancedb/ 2>/dev/null || echo "VectorDB not available"
+   ```
+
+   **Step 1.2: If VectorDB available, retrieve context via semantic search**
+   Use `npx tsx` to run:
+   ```typescript
+   // IMPORTANT: Load .env first for API keys
+   import 'dotenv/config';
+   import { queryPrdSections, getCurrentTodoState, queryJournalEntries } from './src/context/retrieval.js';
+
+   // Get PRD sections relevant to the section being reviewed
+   const prdSections = await queryPrdSections("Section {N} implementation requirements", 5);
+   const todoState = await getCurrentTodoState();
+   const history = await queryJournalEntries("Section {N}", 3);
+
+   console.log("=== PRD REQUIREMENTS ===");
+   prdSections.forEach(s => console.log(`${s.id}: ${s.title}\n${s.content}\n`));
+
+   console.log("=== TODO STATE ===");
+   if (todoState) {
+     todoState.sections.forEach(s => {
+       if (s.name.toLowerCase().includes('{n}')) {
+         console.log(`${s.name}: ${s.completionPct}%`);
+         s.items.forEach(i => console.log(`  ${i.completed ? '✓' : '○'} ${i.id} ${i.description}`));
+       }
+     });
+   }
+   ```
+
+   **Step 1.3: Fallback to file reading if VectorDB unavailable**
+   Only if VectorDB is not available:
    - Read `docs/phase_0_prd_unified.md` for product requirements
    - Read `todo/tasks-phase0-travel-discovery.md` to identify tasks in the specified section
+
+   **Step 1.4: Always read source code files**
    - Identify and read ALL source code files associated with that section
 
 2. **Perform 5-Dimension QA Review**:

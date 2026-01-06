@@ -273,6 +273,10 @@ export async function loadMigrateAndSave<T>(
  *
  * Uses temp file + rename pattern for atomic writes.
  *
+ * Note: If the process crashes between temp file creation and rename,
+ * orphaned .tmp.* files may remain in the target directory.
+ * Consider periodic cleanup of files matching pattern: *.tmp.*
+ *
  * @param filePath - Target file path
  * @param data - Data to write (will be JSON.stringify'd)
  *

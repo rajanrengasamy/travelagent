@@ -379,44 +379,44 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
-- [ ] **3.0 Storage Layer Implementation**
+- [x] **3.0 Storage Layer Implementation**
   - [x] 3.1 Create `src/storage/paths.ts` with path resolution utilities:
     - [x] 3.1.1 Implement `getDataDir()` using `TRAVELAGENT_DATA_DIR` env var or default `~/.travelagent/`
     - [x] 3.1.2 Implement `getSessionDir(sessionId: string)` returning session directory path
     - [x] 3.1.3 Implement `getRunDir(sessionId: string, runId: string)` returning run directory path
     - [x] 3.1.4 Implement `getStageFilePath(sessionId: string, runId: string, stageId: string)` returning stage file path
     - [x] 3.1.5 Implement `getLatestRunSymlink(sessionId: string)` returning latest symlink path
-  - [ ] 3.2 Create `src/storage/atomic.ts` with atomic write implementation:
-    - [ ] 3.2.1 Implement `atomicWriteJson(filePath: string, data: unknown)` using temp file + rename pattern
-    - [ ] 3.2.2 Ensure parent directories are created if they don't exist
-    - [ ] 3.2.3 Write JSON with 2-space indentation (pretty-printed)
-  - [ ] 3.3 Create `src/storage/sessions.ts` with session CRUD operations:
-    - [ ] 3.3.1 Implement `saveSession(session: Session)` writing to session.json
-    - [ ] 3.3.2 Implement `loadSession(sessionId: string): Session` with schema validation
-    - [ ] 3.3.3 Implement `listSessions(): Session[]` scanning sessions directory
-    - [ ] 3.3.4 Implement `archiveSession(sessionId: string)` setting archivedAt timestamp
-    - [ ] 3.3.5 Implement `sessionExists(sessionId: string): boolean`
-  - [ ] 3.4 Create `src/storage/runs.ts` with run storage operations:
-    - [ ] 3.4.1 Implement `createRunDir(sessionId: string, runId: string)` creating run directory structure
-    - [ ] 3.4.2 Implement `saveRunConfig(sessionId: string, runConfig: RunConfig)`
-    - [ ] 3.4.3 Implement `loadRunConfig(sessionId: string, runId: string): RunConfig`
-    - [ ] 3.4.4 Implement `listRuns(sessionId: string): string[]` returning run IDs
-    - [ ] 3.4.5 Implement `getLatestRunId(sessionId: string): string | null` reading symlink
-    - [ ] 3.4.6 Implement `updateLatestSymlink(sessionId: string, runId: string)` updating symlink
-  - [ ] 3.5 Create `src/storage/stages.ts` with stage file storage:
-    - [ ] 3.5.1 Implement `saveStageFile(sessionId: string, runId: string, stageId: string, data: unknown)`
-    - [ ] 3.5.2 Implement `loadStageFile<T>(sessionId: string, runId: string, stageId: string): T` with validation
-    - [ ] 3.5.3 Implement `stageFileExists(sessionId: string, runId: string, stageId: string): boolean`
-    - [ ] 3.5.4 Implement `listStageFiles(sessionId: string, runId: string): string[]`
-  - [ ] 3.6 Create `src/storage/triage.ts` with triage persistence:
-    - [ ] 3.6.1 Implement `saveTriage(sessionId: string, triage: TriageState)`
-    - [ ] 3.6.2 Implement `loadTriage(sessionId: string): TriageState | null`
-    - [ ] 3.6.3 Implement `updateTriageEntry(sessionId: string, entry: TriageEntry)`
-  - [ ] 3.7 Create `src/storage/config.ts` with global config storage:
-    - [ ] 3.7.1 Implement `saveGlobalConfig(config: GlobalConfig)`
-    - [ ] 3.7.2 Implement `loadGlobalConfig(): GlobalConfig`
-  - [ ] 3.8 Create `src/storage/index.ts` exporting all storage functions
-  - [ ] 3.9 Write unit tests for storage layer with mock filesystem
+  - [x] 3.2 Create `src/storage/atomic.ts` with atomic write implementation:
+    - [x] 3.2.1 Implement `atomicWriteJson(filePath: string, data: unknown)` using temp file + rename pattern
+    - [x] 3.2.2 Ensure parent directories are created if they don't exist
+    - [x] 3.2.3 Write JSON with 2-space indentation (pretty-printed)
+  - [x] 3.3 Create `src/storage/sessions.ts` with session CRUD operations:
+    - [x] 3.3.1 Implement `saveSession(session: Session)` writing to session.json
+    - [x] 3.3.2 Implement `loadSession(sessionId: string): Session` with schema validation
+    - [x] 3.3.3 Implement `listSessions(): Session[]` scanning sessions directory
+    - [x] 3.3.4 Implement `archiveSession(sessionId: string)` setting archivedAt timestamp
+    - [x] 3.3.5 Implement `sessionExists(sessionId: string): boolean`
+  - [x] 3.4 Create `src/storage/runs.ts` with run storage operations:
+    - [x] 3.4.1 Implement `createRunDir(sessionId: string, runId: string)` creating run directory structure
+    - [x] 3.4.2 Implement `saveRunConfig(sessionId: string, runConfig: RunConfig)`
+    - [x] 3.4.3 Implement `loadRunConfig(sessionId: string, runId: string): RunConfig`
+    - [x] 3.4.4 Implement `listRuns(sessionId: string): string[]` returning run IDs
+    - [x] 3.4.5 Implement `getLatestRunId(sessionId: string): string | null` reading symlink
+    - [x] 3.4.6 Implement `updateLatestSymlink(sessionId: string, runId: string)` updating symlink
+  - [x] 3.5 Create `src/storage/stages.ts` with stage file storage:
+    - [x] 3.5.1 Implement `saveStageFile(sessionId: string, runId: string, stageId: string, data: unknown)`
+    - [x] 3.5.2 Implement `loadStageFile<T>(sessionId: string, runId: string, stageId: string): T` with validation
+    - [x] 3.5.3 Implement `stageFileExists(sessionId: string, runId: string, stageId: string): boolean`
+    - [x] 3.5.4 Implement `listStageFiles(sessionId: string, runId: string): string[]`
+  - [x] 3.6 Create `src/storage/triage.ts` with triage persistence:
+    - [x] 3.6.1 Implement `saveTriage(sessionId: string, triage: TriageState)`
+    - [x] 3.6.2 Implement `loadTriage(sessionId: string): TriageState | null`
+    - [x] 3.6.3 Implement `updateTriageEntry(sessionId: string, entry: TriageEntry)`
+  - [x] 3.7 Create `src/storage/config.ts` with global config storage:
+    - [x] 3.7.1 Implement `saveGlobalConfig(config: GlobalConfig)`
+    - [x] 3.7.2 Implement `loadGlobalConfig(): GlobalConfig`
+  - [x] 3.8 Create `src/storage/index.ts` exporting all storage functions
+  - [x] 3.9 Write unit tests for storage layer with mock filesystem
 
 ---
 

@@ -153,3 +153,101 @@ clarifyingQuestions: z.array(z.string()).min(2).max(4).optional(),
 1. Consider adding integration tests for schema migration (version upgrades)
 2. Consider creating SCHEMA_CHANGES.md to document schema evolution strategy
 3. Section 2.0 is now complete and fully PRD-compliant
+
+---
+
+# Section 3.0 - Storage Layer Implementation
+
+**Generated:** 2026-01-06
+**Section Reviewed:** 3.0 (Storage Layer Implementation)
+
+## Issues Summary (Section 3.0)
+
+| Severity | Found | Fixed | Remaining |
+|----------|-------|-------|-----------|
+| Critical | 0 | 0 | 0 |
+| Major | 3 | 3 | 0 |
+| Minor | 5 | 4 | 1* |
+
+*MIN-5 (Documentation) was already addressed in the QA report - no action needed.
+
+## Fix Details (Section 3.0)
+
+| Issue ID | Agent | Status | Files Modified | Notes |
+|----------|-------|--------|----------------|-------|
+| MAJ-1 | Agent 1 | Fixed | `paths.ts`, `paths.test.ts` | Path traversal validation - 19 new tests |
+| MAJ-2 | Agent 3 | Fixed | `stages.ts`, `stages.test.ts` | Optional schema validation for loadStageFile - 3 new tests |
+| MAJ-3 | Agent 2 | Fixed | `runs.ts`, `runs.test.ts` | Symlink target validation - 2 new tests |
+| MIN-1 | Agent 4 | Fixed | `stages.ts`, `stages.test.ts` | stageId format validation - 4 new tests |
+| MIN-2 | Agent 5 | Fixed | `sessions.ts`, `runs.ts`, `stages.ts` + tests | Consistent error messages with file paths |
+| MIN-3 | Agent 5 | Fixed | `migrations/index.ts` | Documentation for orphaned temp files |
+| MIN-4 | Agent 5 | Fixed | `sessions.ts` | console.warn for failed session loads |
+| MIN-5 | N/A | N/A | N/A | Already addressed - no action needed |
+
+## Detailed Changes (Section 3.0)
+
+### MAJ-1: Path Traversal Validation (Security)
+
+Added `validateIdSecurity()` helper function in `paths.ts` that:
+- Rejects IDs containing `..` (parent directory traversal)
+- Rejects IDs containing `/` or `\` (path separators)
+- Applied to `getSessionDir()`, `getRunDir()`, `getStageFilePath()`, and `getLatestRunSymlink()`
+- 19 new tests verify path traversal prevention
+
+### MAJ-2: Schema Validation for loadStageFile (PRD Compliance)
+
+Updated `loadStageFile<T>()` with optional schema parameter:
+```typescript
+loadStageFile<T>(sessionId, runId, stageId, schema?: ZodSchema<T>): Promise<T>
+```
+- When schema provided: validates parsed JSON with `schema.parse()`
+- Without schema: maintains backward compatibility (`data as T`)
+- 3 new tests verify schema validation behavior
+
+### MAJ-3: Symlink Target Validation (Error Handling)
+
+Added validation in `updateLatestSymlink()`:
+- Verifies target run directory exists with `fs.stat()`
+- Verifies target is a directory (not a file)
+- Throws descriptive error if target missing or invalid
+- 2 new tests verify edge case handling
+
+### MIN-1: stageId Format Validation (Type Safety)
+
+Added validation in `saveStageFile()`:
+```typescript
+if (!STAGE_ID_PATTERN.test(stageId)) {
+  throw new Error(`Invalid stageId format: ${stageId}...`);
+}
+```
+- Uses existing `STAGE_ID_PATTERN` regex
+- 4 new tests verify format validation
+
+### MIN-2: Consistent Error Messages (Architecture)
+
+Standardized error messages to include file paths:
+- `Session not found: ${sessionId} (path: ${filePath})`
+- `Run not found: ${runId} in session ${sessionId} (path: ${filePath})`
+- `Stage file not found: ${stageId} in run ${runId} (path: ${filePath})`
+
+### MIN-3: Temp File Documentation (Error Handling)
+
+Added JSDoc note to `atomicWriteJson()` about potential orphaned temp files after process crashes.
+
+### MIN-4: Session Load Warning (Error Handling)
+
+Added `console.warn()` in `listSessions()` to log warnings when individual sessions fail to load, aiding debugging without breaking the listing.
+
+## Verification Results (Section 3.0)
+
+| Check | Status |
+|-------|--------|
+| TypeScript Build (`npm run build`) | PASSED |
+| All Tests (`npm test`) | PASSED (541 tests) |
+
+## Test Coverage Added
+
+- **paths.test.ts**: +19 new tests (path traversal prevention)
+- **runs.test.ts**: +2 new tests, -1 old test (symlink validation)
+- **stages.test.ts**: +7 new tests (schema validation + stageId validation)
+- **sessions.test.ts**: Tests updated for new error format

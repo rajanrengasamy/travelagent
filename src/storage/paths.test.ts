@@ -129,6 +129,28 @@ describe('storage/paths', () => {
 
       expect(result).toContain('20260102-tokyo-trip-1');
     });
+
+    describe('path traversal prevention', () => {
+      it('should reject sessionId with ..', () => {
+        expect(() => getSessionDir('../../../etc')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with embedded ..', () => {
+        expect(() => getSessionDir('foo/../../../etc')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with forward slash', () => {
+        expect(() => getSessionDir('foo/bar')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with backslash', () => {
+        expect(() => getSessionDir('foo\\bar')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with multiple traversal attempts', () => {
+        expect(() => getSessionDir('..\\..\\etc')).toThrow('sessionId contains invalid characters');
+      });
+    });
   });
 
   describe('getRunsDir', () => {
@@ -191,6 +213,32 @@ describe('storage/paths', () => {
       const result = getRunDir('20260102-japan-food-temples', '20260102-143512-from-08');
 
       expect(result).toContain('20260102-143512-from-08');
+    });
+
+    describe('path traversal prevention', () => {
+      it('should reject sessionId with ..', () => {
+        expect(() => getRunDir('../../../etc', '20260102-143512-full')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject runId with ..', () => {
+        expect(() => getRunDir('20260102-japan-food-temples', '../../../etc')).toThrow('runId contains invalid characters');
+      });
+
+      it('should reject sessionId with forward slash', () => {
+        expect(() => getRunDir('foo/bar', '20260102-143512-full')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject runId with forward slash', () => {
+        expect(() => getRunDir('20260102-japan-food-temples', 'foo/bar')).toThrow('runId contains invalid characters');
+      });
+
+      it('should reject sessionId with backslash', () => {
+        expect(() => getRunDir('foo\\bar', '20260102-143512-full')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject runId with backslash', () => {
+        expect(() => getRunDir('20260102-japan-food-temples', 'foo\\bar')).toThrow('runId contains invalid characters');
+      });
     });
   });
 
@@ -283,6 +331,38 @@ describe('storage/paths', () => {
         expect(result.endsWith('.json')).toBe(true);
       });
     });
+
+    describe('path traversal prevention', () => {
+      it('should reject sessionId with ..', () => {
+        expect(() =>
+          getStageFilePath('../../../etc', '20260102-143512-full', '04_candidates_normalized')
+        ).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject runId with ..', () => {
+        expect(() =>
+          getStageFilePath('20260102-japan-food-temples', '../../../etc', '04_candidates_normalized')
+        ).toThrow('runId contains invalid characters');
+      });
+
+      it('should reject stageId with ..', () => {
+        expect(() =>
+          getStageFilePath('20260102-japan-food-temples', '20260102-143512-full', '../../../etc/passwd')
+        ).toThrow('stageId contains invalid characters');
+      });
+
+      it('should reject stageId with forward slash', () => {
+        expect(() =>
+          getStageFilePath('20260102-japan-food-temples', '20260102-143512-full', 'foo/bar')
+        ).toThrow('stageId contains invalid characters');
+      });
+
+      it('should reject stageId with backslash', () => {
+        expect(() =>
+          getStageFilePath('20260102-japan-food-temples', '20260102-143512-full', 'foo\\bar')
+        ).toThrow('stageId contains invalid characters');
+      });
+    });
   });
 
   describe('getLatestRunSymlink', () => {
@@ -311,6 +391,20 @@ describe('storage/paths', () => {
 
     it('should throw error for whitespace-only session ID', () => {
       expect(() => getLatestRunSymlink('   ')).toThrow('sessionId is required');
+    });
+
+    describe('path traversal prevention', () => {
+      it('should reject sessionId with ..', () => {
+        expect(() => getLatestRunSymlink('../../../etc')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with forward slash', () => {
+        expect(() => getLatestRunSymlink('foo/bar')).toThrow('sessionId contains invalid characters');
+      });
+
+      it('should reject sessionId with backslash', () => {
+        expect(() => getLatestRunSymlink('foo\\bar')).toThrow('sessionId contains invalid characters');
+      });
     });
   });
 

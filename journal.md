@@ -423,3 +423,140 @@ Task 3.1 is complete with 16 path helper functions and 40 tests. The path utilit
 **Recommended next step:** Use `/develop 3.2-3.7` with 5 parallel agents to complete the remaining Storage Layer tasks, as they are independent and well-defined.
 
 ---
+
+## Session: 2026-01-06 23:54 AEDT
+
+### Summary
+Completed Task 3.0 (Storage Layer Implementation) by implementing all remaining subtasks (3.2-3.9). Created 6 storage modules with full CRUD operations for sessions, runs, stages, triage, and config. Added 76 new tests bringing total to 514. The storage layer is now complete.
+
+### Work Completed
+- Created `src/storage/atomic.ts` with atomic file operations:
+  - Re-exported `atomicWriteJson` from migrations module
+  - Added `readJson<T>()` for typed JSON reading with error handling
+  - Added `fileExists()` helper for file existence checks
+- Created `src/storage/sessions.ts` with session CRUD:
+  - `saveSession()`, `loadSession()`, `listSessions()`, `archiveSession()`, `sessionExists()`
+  - Filters archived sessions by default, sorts by createdAt descending
+- Created `src/storage/runs.ts` with run management:
+  - `createRunDir()`, `saveRunConfig()`, `loadRunConfig()`, `listRuns()`
+  - `getLatestRunId()`, `updateLatestSymlink()` with relative symlinks
+- Created `src/storage/stages.ts` with stage file operations:
+  - `saveStageFile()`, `loadStageFile<T>()`, `stageFileExists()`, `listStageFiles()`
+  - Sorts stage files by stage number (00-10)
+- Created `src/storage/triage.ts` with triage persistence:
+  - `saveTriage()`, `loadTriage()`, `updateTriageEntry()`
+  - Auto-creates triage state when updating non-existent entry
+- Created `src/storage/config.ts` with global config:
+  - Defined `GlobalConfigSchema` (not previously in schemas)
+  - `saveGlobalConfig()`, `loadGlobalConfig()` with defaults
+- Updated `src/storage/index.ts` exporting all 30+ storage functions
+- Created 6 test files with 76 new tests (10+16+15+10+12+12)
+- Updated `todo/tasks-phase0-travel-discovery.md` marking all 3.x tasks complete
+- All 514 tests pass
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Test used `flexibility: 'none'` instead of object | Changed to `flexibility: { type: 'none' }` per discriminated union schema | Resolved |
+| `DEFAULT_MODELS` not exported from schemas/index | Imported directly from `schemas/run-config.js` | Resolved |
+| GlobalConfig schema didn't exist | Defined locally in `config.ts` with user preferences fields | Resolved |
+| Symlinks need relative paths for portability | Used `path.basename()` for relative symlink creation | Resolved |
+
+### Key Decisions
+- **Re-use atomic writes**: Re-exported `atomicWriteJson` from migrations instead of duplicating
+- **GlobalConfigSchema defined locally**: Added to `config.ts` since it's storage-specific, not pipeline data
+- **Relative symlinks**: `latest` symlink uses relative target (just `runId`) not absolute path
+- **Real filesystem tests**: Used temp directories instead of mocks for more realistic testing
+- **Optional includes for archived**: `listSessions({ includeArchived: true })` pattern
+
+### Learnings
+- Zod's discriminated unions (`FlexibilitySchema`) require full object structure in tests, not shorthand
+- Symlinks should use relative paths for portability across environments
+- `fs.readdir({ withFileTypes: true })` enables efficient filtering without extra stat calls
+- Schema validation on both read and write catches data corruption early
+
+### Open Items / Blockers
+- [ ] Task 4.0: Pipeline Stage Infrastructure (next major task)
+- [ ] Tasks 29.0-36.0: Phase 1 Telegram implementation (after core pipeline)
+- [ ] Address 28 lint warnings in context module code
+
+### Context for Next Session
+Task 3.0 (Storage Layer) is complete with all 9 subtasks done. The project now has:
+- 16 path helpers in `paths.ts`
+- Full CRUD for sessions, runs, stages, triage, and config
+- 514 passing tests
+
+**Storage Layer Functions Summary:**
+| Module | Functions |
+|--------|-----------|
+| atomic.ts | `atomicWriteJson`, `readJson`, `fileExists` |
+| sessions.ts | `saveSession`, `loadSession`, `listSessions`, `archiveSession`, `sessionExists` |
+| runs.ts | `createRunDir`, `saveRunConfig`, `loadRunConfig`, `listRuns`, `getLatestRunId`, `updateLatestSymlink` |
+| stages.ts | `saveStageFile`, `loadStageFile`, `stageFileExists`, `listStageFiles` |
+| triage.ts | `saveTriage`, `loadTriage`, `updateTriageEntry` |
+| config.ts | `saveGlobalConfig`, `loadGlobalConfig`, `GlobalConfigSchema` |
+
+**Next priority:** Task 4.0 (Pipeline Stage Infrastructure) which defines the Stage interface, StageContext, dependency map, checkpoint writing, and manifest generation.
+
+---
+
+## Session: 2026-01-07 00:05 AEDT
+
+### Summary
+Ran comprehensive QA review on Section 3.0 (Storage Layer) using the `/qa` skill. Found 3 major and 5 minor issues spanning security, PRD compliance, and error handling. Spawned 5 parallel fix agents that resolved all actionable issues. All 541 tests pass with 28+ new tests added.
+
+### Work Completed
+- Executed `/qa 3.0` to trigger QA review cycle on Storage Layer
+- QA reviewer agent analyzed 8 source files and 7 test files against PRD Section 13
+- Created `docs/Section3.0-QA-issues.md` with detailed issue report
+- Fixed MAJ-1 (Security): Added `validateIdSecurity()` helper to paths.ts preventing path traversal attacks (19 new tests)
+- Fixed MAJ-2 (PRD Compliance): Added optional `ZodSchema<T>` parameter to `loadStageFile()` for schema validation (3 new tests)
+- Fixed MAJ-3 (Error Handling): Added target existence validation in `updateLatestSymlink()` (2 new tests)
+- Fixed MIN-1 (Type Safety): Added `STAGE_ID_PATTERN` validation in `saveStageFile()` (4 new tests)
+- Fixed MIN-2 (Architecture): Standardized error messages with file paths across all modules
+- Fixed MIN-3 (Documentation): Added JSDoc note about orphaned temp files in `atomicWriteJson()`
+- Fixed MIN-4 (Error Handling): Added `console.warn()` in `listSessions()` for failed session loads
+- Updated `docs/QA-Fix-Tracker.md` with Section 3.0 results
+- All 541 tests pass (514 existing + 27 new)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| MAJ-1: Path traversal vulnerability | Added `validateIdSecurity()` blocking `..`, `/`, `\` in IDs | Resolved |
+| MAJ-2: `loadStageFile` lacks schema validation | Added optional schema param maintaining backward compat | Resolved |
+| MAJ-3: Dangling symlinks possible | Added `fs.stat()` check before symlink creation | Resolved |
+| MIN-1: `saveStageFile` accepts invalid stageIds | Added `STAGE_ID_PATTERN` validation | Resolved |
+| MIN-2: Inconsistent error messages | Standardized format with file paths | Resolved |
+| MIN-3: Undocumented temp file behavior | Added JSDoc note | Resolved |
+| MIN-4: Silent session load failures | Added console.warn logging | Resolved |
+| MIN-5: Documentation consistency | Already addressed in QA report | N/A |
+
+### Key Decisions
+- **Path security validation** rejects IDs containing `..`, `/`, or `\` to prevent directory escape
+- **Schema validation is optional** in `loadStageFile()` - maintains backward compatibility while enabling validation
+- **Symlink target must exist** before creation - prevents dangling symlinks
+- **Error messages include file paths** for easier debugging in production
+
+### Learnings
+- Path traversal attacks can occur via user-provided sessionId/runId - always validate
+- Optional schema parameter pattern enables gradual migration to validated reads
+- Symlink operations should validate target existence before creation
+- Parallel fix agents (5 agents) continue to be effective for independent fixes
+- QA orchestration (1 reviewer + 5 fixers) provides systematic code quality improvement
+
+### Open Items / Blockers
+- [ ] Task 4.0: Pipeline Stage Infrastructure (next major task)
+- [ ] Tasks 29.0-36.0: Phase 1 Telegram implementation
+- [ ] Address 28 lint warnings in context module code
+
+### Context for Next Session
+Section 3.0 (Storage Layer) QA is complete. All 3 major issues (security, PRD compliance, error handling) and 4 minor issues have been resolved. The storage layer now has:
+- Path traversal protection on all path functions
+- Optional schema validation on stage file loading
+- Validated symlink target existence
+- Consistent error messages with file paths
+- 541 passing tests
+
+**Next priority:** Task 4.0 (Pipeline Stage Infrastructure) which defines the Stage interface, StageContext, dependency map, checkpoint writing, and manifest generation.
+
+---

@@ -15,10 +15,107 @@ You are a **QA Orchestrator** for the Travel Discovery Orchestrator CLI project.
 - **TODO**: `todo/tasks-phase0-travel-discovery.md`
 - **QA Reports**: `docs/Section{N}-QA-issues.md`
 - **Fix Tracker**: `docs/QA-Fix-Tracker.md`
+- **VectorDB**: `~/.travelagent/context/lancedb/` (LanceDB collections)
+
+---
+
+## Phase 0: VectorDB Context Retrieval (REQUIRED)
+
+**IMPORTANT**: Before reading any markdown files, you MUST first attempt to retrieve context from the vector database to ensure you have the most up-to-date indexed information.
+
+### Step 0.1: Check VectorDB Availability
+
+Run this bash command to check if VectorDB is available:
+
+```bash
+ls ~/.travelagent/context/lancedb/ 2>/dev/null || echo "VectorDB not available"
+```
+
+### Step 0.2: If VectorDB Available - Use Retrieval API
+
+If VectorDB exists, use the retrieval functions to get context. Run `npx tsx` with this code:
+
+```typescript
+// IMPORTANT: Load .env first for API keys
+import 'dotenv/config';
+
+import {
+  queryPrdSections,
+  getCurrentTodoState,
+  queryJournalEntries
+} from './src/context/retrieval.js';
+
+// 1. Get PRD sections relevant to Section $ARGUMENTS
+const sectionQuery = "Section $ARGUMENTS implementation requirements";
+const relevantPrd = await queryPrdSections(sectionQuery, 5);
+console.log("=== RELEVANT PRD SECTIONS ===");
+for (const section of relevantPrd) {
+  console.log(`\n### ${section.id}: ${section.title}`);
+  console.log(section.content.substring(0, 2000));
+}
+
+// 2. Get current TODO state from vector DB
+const todoState = await getCurrentTodoState();
+if (todoState) {
+  console.log("\n=== TODO STATE (from VectorDB) ===");
+  console.log(`Overall Progress: ${todoState.overallCompletionPct}%`);
+  for (const section of todoState.sections) {
+    if (section.name.includes('$ARGUMENTS') || section.name.includes('Section $ARGUMENTS')) {
+      console.log(`\n### ${section.name} (${section.completionPct}%)`);
+      for (const item of section.items) {
+        const checkbox = item.completed ? '[x]' : '[ ]';
+        console.log(`- ${checkbox} ${item.id} ${item.description}`);
+      }
+    }
+  }
+}
+
+// 3. Get historical context about this section
+const historicalContext = await queryJournalEntries("Section $ARGUMENTS implementation", 3);
+if (historicalContext.length > 0) {
+  console.log("\n=== HISTORICAL CONTEXT ===");
+  for (const entry of historicalContext) {
+    console.log(`\n### Journal Entry: ${entry.timestamp}`);
+    console.log(entry.summary);
+  }
+}
+```
+
+### Step 0.3: Staleness Check
+
+**IMPORTANT**: Even if VectorDB is available, check if it's stale by comparing timestamps:
+
+```bash
+# Get TODO file modification time
+TODO_MTIME=$(stat -f %m todo/tasks-phase0-travel-discovery.md 2>/dev/null || stat -c %Y todo/tasks-phase0-travel-discovery.md 2>/dev/null)
+PRD_MTIME=$(stat -f %m docs/phase_0_prd_unified.md 2>/dev/null || stat -c %Y docs/phase_0_prd_unified.md 2>/dev/null)
+JOURNAL_MTIME=$(stat -f %m journal.md 2>/dev/null || stat -c %Y journal.md 2>/dev/null)
+echo "File mtimes - TODO: $TODO_MTIME, PRD: $PRD_MTIME, Journal: $JOURNAL_MTIME"
+
+# Get VectorDB collection modification times
+ls -la ~/.travelagent/context/lancedb/*/*.lance 2>/dev/null | head -5
+```
+
+If the markdown files have been modified more recently than the VectorDB collections, warn:
+```
+⚠️ VectorDB may be STALE - source files modified after last index
+Run `npm run seed-context` to re-index the latest content before proceeding.
+```
+
+### Step 0.4: Fallback to File Reading
+
+If VectorDB is NOT available or the retrieval fails, then proceed to read the markdown files directly in Phase 1. When using fallback, warn the user:
+
+```
+⚠️ VectorDB not available - reading files directly (may be stale)
+Run `npm run seed-context` to index the latest context.
+```
 
 ---
 
 ## Phase 1: Context Gathering
+
+**Note**: If Phase 0 successfully retrieved context from VectorDB, use that data instead of reading files again. Only read files if VectorDB was unavailable.
 
 1. Read `todo/tasks-phase0-travel-discovery.md` and extract all tasks from **Section $ARGUMENTS**
 2. Read `docs/phase_0_prd_unified.md` to understand the product requirements for this section
