@@ -172,10 +172,31 @@ describe('Context Storage Operations', () => {
         "Collection 'journal_entries' does not exist"
       );
     });
+
+    it('should delete existing record before inserting (upsert)', async () => {
+      const entry = {
+        id: 'journal-upsert-001',
+        timestamp: '2024-01-15T10:00:00Z',
+        content: 'Test content',
+        summary: 'Test summary',
+        topics: [],
+      };
+
+      await storeJournalEntry(entry);
+
+      // Verify delete was called before add (upsert pattern)
+      expect(mockDelete).toHaveBeenCalledWith("id = 'journal-upsert-001'");
+      expect(mockAdd).toHaveBeenCalled();
+
+      // Verify delete was called before add
+      const deleteCallOrder = mockDelete.mock.invocationCallOrder[0];
+      const addCallOrder = mockAdd.mock.invocationCallOrder[0];
+      expect(deleteCallOrder).toBeLessThan(addCallOrder);
+    });
   });
 
   describe('storeTodoSnapshot', () => {
-    it('should store a TODO snapshot with embedding from incomplete items', async () => {
+    it('should store a TODO snapshot with embedding including task IDs', async () => {
       const snapshot = {
         id: 'todo-001',
         timestamp: '2024-01-15T10:00:00Z',
@@ -205,8 +226,9 @@ describe('Context Storage Operations', () => {
 
       await storeTodoSnapshot(snapshot);
 
+      // Embedding text should include task ID for better search matching
       expect(generateEmbedding).toHaveBeenCalledWith(
-        'Phase 0.0 - Context Persistence\nCreate storage layer'
+        'Phase 0.0 - Context Persistence\n0.0.2: Create storage layer'
       );
 
       expect(mockAdd).toHaveBeenCalledWith([
@@ -252,6 +274,26 @@ describe('Context Storage Operations', () => {
         }),
       ]);
     });
+
+    it('should delete existing record before inserting (upsert)', async () => {
+      const section = {
+        id: 'prd-section-0',
+        sectionNumber: 0,
+        title: 'Introduction',
+        content: 'This document describes the Travel Discovery system.',
+      };
+
+      await storePrdSection(section);
+
+      // Verify delete was called before add (upsert pattern)
+      expect(mockDelete).toHaveBeenCalledWith("id = 'prd-section-0'");
+      expect(mockAdd).toHaveBeenCalled();
+
+      // Verify delete was called before add
+      const deleteCallOrder = mockDelete.mock.invocationCallOrder[0];
+      const addCallOrder = mockAdd.mock.invocationCallOrder[0];
+      expect(deleteCallOrder).toBeLessThan(addCallOrder);
+    });
   });
 
   describe('storeSessionSummary', () => {
@@ -282,6 +324,47 @@ describe('Context Storage Operations', () => {
           embedding: mockEmbedding,
         }),
       ]);
+    });
+
+    it('should delete existing record before inserting (upsert)', async () => {
+      const summary = {
+        id: 'session-upsert-001',
+        timestamp: '2024-01-15T10:00:00Z',
+        summary: 'Test summary',
+        workCompleted: [],
+        openItems: [],
+      };
+
+      await storeSessionSummary(summary);
+
+      // Verify delete was called before add (upsert pattern)
+      expect(mockDelete).toHaveBeenCalledWith("id = 'session-upsert-001'");
+      expect(mockAdd).toHaveBeenCalled();
+
+      // Verify delete was called before add
+      const deleteCallOrder = mockDelete.mock.invocationCallOrder[0];
+      const addCallOrder = mockAdd.mock.invocationCallOrder[0];
+      expect(deleteCallOrder).toBeLessThan(addCallOrder);
+    });
+  });
+
+  describe('upsert error handling', () => {
+    it('should continue if delete fails (record does not exist)', async () => {
+      // Simulate delete failing because record doesn't exist
+      mockDelete.mockRejectedValueOnce(new Error('No matching records'));
+
+      const section = {
+        id: 'prd-new-section',
+        sectionNumber: 99,
+        title: 'New Section',
+        content: 'Content for new section.',
+      };
+
+      // Should not throw - upsert should handle missing records gracefully
+      await expect(storePrdSection(section)).resolves.not.toThrow();
+
+      // Add should still be called
+      expect(mockAdd).toHaveBeenCalled();
     });
   });
 

@@ -420,44 +420,44 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
-- [ ] **4.0 Pipeline Stage Infrastructure**
-  - [ ] 4.1 Create `src/pipeline/types.ts` with stage interface definitions:
-    - [ ] 4.1.1 Define `Stage` interface with `id`, `name`, `number`, `execute()` method
-    - [ ] 4.1.2 Define `StageContext` with session, runId, config, costTracker references
-    - [ ] 4.1.3 Define `StageResult<T>` with data, metadata, timing information
-  - [ ] 4.2 Create `src/pipeline/dependencies.ts` with stage dependency map:
-    - [ ] 4.2.1 Define STAGE_DEPENDENCIES constant mapping each stage to its upstream stage
-    - [ ] 4.2.2 Implement `getUpstreamStages(stageNumber: number): number[]` returning all upstream stages
-    - [ ] 4.2.3 Implement `getDownstreamStages(stageNumber: number): number[]` returning all downstream stages
-  - [ ] 4.3 Create `src/pipeline/checkpoint.ts` with checkpoint writing:
-    - [ ] 4.3.1 Implement `writeCheckpoint(context: StageContext, stageId: string, data: unknown)` with metadata injection
-    - [ ] 4.3.2 Ensure StageMetadata is added to every checkpoint (stageId, stageNumber, stageName, schemaVersion, sessionId, runId, createdAt, upstreamStage, config)
-    - [ ] 4.3.3 Implement atomic write with temp file pattern
-  - [ ] 4.4 Create `src/pipeline/manifest.ts` with manifest generation:
-    - [ ] 4.4.1 Implement `calculateFileHash(filePath: string): string` using SHA-256
-    - [ ] 4.4.2 Implement `generateManifest(sessionId: string, runId: string, stages: StageInfo[]): RunManifest`
-    - [ ] 4.4.3 Implement `saveManifest(sessionId: string, runId: string, manifest: RunManifest)`
-    - [ ] 4.4.4 Include stagesExecuted, stagesSkipped, finalStage, success in manifest
-  - [ ] 4.5 Create `src/pipeline/resume.ts` with resume-from-stage logic:
-    - [ ] 4.5.1 Implement `loadStageForResume<T>(sessionId: string, sourceRunId: string, stageNumber: number): T`
-    - [ ] 4.5.2 Implement `validateStageFile(data: unknown, stageNumber: number): boolean`
-    - [ ] 4.5.3 Implement `getStagesToSkip(fromStage: number): number[]` using dependency map
-    - [ ] 4.5.4 Implement `getStagesToExecute(fromStage: number): number[]`
-  - [ ] 4.6 Create `src/pipeline/executor.ts` with stage executor framework:
-    - [ ] 4.6.1 Implement `PipelineExecutor` class with stage registration
-    - [ ] 4.6.2 Implement `execute(context: StageContext, options: ExecuteOptions)` running full pipeline
-    - [ ] 4.6.3 Implement `executeFromStage(context: StageContext, fromStage: number, sourceRunId: string)`
-    - [ ] 4.6.4 Handle stage failures with error logging and graceful degradation
-    - [ ] 4.6.5 Track timing per stage and total pipeline duration
-  - [ ] 4.7 Create `src/pipeline/index.ts` exporting pipeline utilities
-  - [ ] 4.8 Write unit tests for pipeline infrastructure
+- [x] **4.0 Pipeline Stage Infrastructure**
+  - [x] 4.1 Create `src/pipeline/types.ts` with stage interface definitions:
+    - [x] 4.1.1 Define `Stage` interface with `id`, `name`, `number`, `execute()` method
+    - [x] 4.1.2 Define `StageContext` with session, runId, config, costTracker references
+    - [x] 4.1.3 Define `StageResult<T>` with data, metadata, timing information
+  - [x] 4.2 Create `src/pipeline/dependencies.ts` with stage dependency map:
+    - [x] 4.2.1 Define STAGE_DEPENDENCIES constant mapping each stage to its upstream stage
+    - [x] 4.2.2 Implement `getUpstreamStages(stageNumber: number): number[]` returning all upstream stages
+    - [x] 4.2.3 Implement `getDownstreamStages(stageNumber: number): number[]` returning all downstream stages
+  - [x] 4.3 Create `src/pipeline/checkpoint.ts` with checkpoint writing:
+    - [x] 4.3.1 Implement `writeCheckpoint(context: StageContext, stageId: string, data: unknown)` with metadata injection
+    - [x] 4.3.2 Ensure StageMetadata is added to every checkpoint (stageId, stageNumber, stageName, schemaVersion, sessionId, runId, createdAt, upstreamStage, config)
+    - [x] 4.3.3 Implement atomic write with temp file pattern
+  - [x] 4.4 Create `src/pipeline/manifest.ts` with manifest generation:
+    - [x] 4.4.1 Implement `calculateFileHash(filePath: string): string` using SHA-256
+    - [x] 4.4.2 Implement `generateManifest(sessionId: string, runId: string, stages: StageInfo[]): RunManifest`
+    - [x] 4.4.3 Implement `saveManifest(sessionId: string, runId: string, manifest: RunManifest)`
+    - [x] 4.4.4 Include stagesExecuted, stagesSkipped, finalStage, success in manifest
+  - [x] 4.5 Create `src/pipeline/resume.ts` with resume-from-stage logic:
+    - [x] 4.5.1 Implement `loadStageForResume<T>(sessionId: string, sourceRunId: string, stageNumber: number): T`
+    - [x] 4.5.2 Implement `validateStageFile(data: unknown, stageNumber: number): boolean`
+    - [x] 4.5.3 Implement `getStagesToSkip(fromStage: number): number[]` using dependency map
+    - [x] 4.5.4 Implement `getStagesToExecute(fromStage: number): number[]`
+  - [x] 4.6 Create `src/pipeline/executor.ts` with stage executor framework:
+    - [x] 4.6.1 Implement `PipelineExecutor` class with stage registration
+    - [x] 4.6.2 Implement `execute(context: StageContext, options: ExecuteOptions)` running full pipeline
+    - [x] 4.6.3 Implement `executeFromStage(context: StageContext, fromStage: number, sourceRunId: string)`
+    - [x] 4.6.4 Handle stage failures with error logging and graceful degradation
+    - [x] 4.6.5 Track timing per stage and total pipeline duration
+  - [x] 4.7 Create `src/pipeline/index.ts` exporting pipeline utilities
+  - [x] 4.8 Write unit tests for pipeline infrastructure
 
 ---
 
-- [ ] **5.0 Session Management Core**
-  - [ ] 5.1 Create `src/sessions/id-generator.ts` with ID generation:
-    - [ ] 5.1.1 Implement `generateSessionId(prompt: string, destinations: string[], interests: string[]): string` following `YYYYMMDD-<slug>` format
-    - [ ] 5.1.2 Implement `generateSlug(tokens: string[]): string` with rules from PRD Section 11.1:
+- [x] **5.0 Session Management Core**
+  - [x] 5.1 Create `src/sessions/id-generator.ts` with ID generation:
+    - [x] 5.1.1 Implement `generateSessionId(prompt: string, destinations: string[], interests: string[]): string` following `YYYYMMDD-<slug>` format
+    - [x] 5.1.2 Implement `generateSlug(tokens: string[]): string` with rules from PRD Section 11.1:
       - Extract high-signal tokens (destination, month/season, trip type, 1-2 interests)
       - Lowercase all characters
       - Replace spaces and special characters with hyphens
@@ -465,260 +465,260 @@ Update the file after completing each sub-task, not just after completing an ent
       - Remove emoji and punctuation
       - Collapse multiple hyphens to single hyphen
       - Trim to max 50 characters at word boundary
-    - [ ] 5.1.3 Implement `handleCollision(baseId: string): string` appending `-2`, `-3`, etc. if ID exists
-    - [ ] 5.1.4 Implement `generateRunId(mode: string): string` following `YYYYMMDD-HHMMSS[-mode]` format
-  - [ ] 5.2 Create `src/sessions/create.ts` with session creation:
-    - [ ] 5.2.1 Implement `createSession(params: CreateSessionParams): Session` generating ID and saving
-    - [ ] 5.2.2 Validate required fields (destinations, dateRange, flexibility, interests)
-    - [ ] 5.2.3 Handle optional constraints
-    - [ ] 5.2.4 Set createdAt timestamp
-  - [ ] 5.3 Create `src/sessions/list.ts` with session listing:
-    - [ ] 5.3.1 Implement `listSessions(options?: ListOptions): SessionSummary[]` returning session summaries
-    - [ ] 5.3.2 Support filtering by archived status
-    - [ ] 5.3.3 Sort by createdAt descending
-  - [ ] 5.4 Create `src/sessions/view.ts` with session viewing:
-    - [ ] 5.4.1 Implement `viewSession(sessionId: string): SessionDetails` loading full session with run history
-    - [ ] 5.4.2 Include enhancement result if available
-    - [ ] 5.4.3 Include latest run summary
-  - [ ] 5.5 Create `src/sessions/archive.ts` with session archiving:
-    - [ ] 5.5.1 Implement `archiveSession(sessionId: string)` setting archivedAt timestamp
-    - [ ] 5.5.2 Implement `unarchiveSession(sessionId: string)` clearing archivedAt
-  - [ ] 5.6 Create `src/sessions/index.ts` exporting all session functions
-  - [ ] 5.7 Write unit tests for session management
+    - [x] 5.1.3 Implement `handleCollision(baseId: string): string` appending `-2`, `-3`, etc. if ID exists
+    - [x] 5.1.4 Implement `generateRunId(mode: string): string` following `YYYYMMDD-HHMMSS[-mode]` format
+  - [x] 5.2 Create `src/sessions/create.ts` with session creation:
+    - [x] 5.2.1 Implement `createSession(params: CreateSessionParams): Session` generating ID and saving
+    - [x] 5.2.2 Validate required fields (destinations, dateRange, flexibility, interests)
+    - [x] 5.2.3 Handle optional constraints
+    - [x] 5.2.4 Set createdAt timestamp
+  - [x] 5.3 Create `src/sessions/list.ts` with session listing:
+    - [x] 5.3.1 Implement `listSessions(options?: ListOptions): SessionSummary[]` returning session summaries
+    - [x] 5.3.2 Support filtering by archived status
+    - [x] 5.3.3 Sort by createdAt descending
+  - [x] 5.4 Create `src/sessions/view.ts` with session viewing:
+    - [x] 5.4.1 Implement `viewSession(sessionId: string): SessionDetails` loading full session with run history
+    - [x] 5.4.2 Include enhancement result if available
+    - [x] 5.4.3 Include latest run summary
+  - [x] 5.5 Create `src/sessions/archive.ts` with session archiving:
+    - [x] 5.5.1 Implement `archiveSession(sessionId: string)` setting archivedAt timestamp
+    - [x] 5.5.2 Implement `unarchiveSession(sessionId: string)` clearing archivedAt
+  - [x] 5.6 Create `src/sessions/index.ts` exporting all session functions
+  - [x] 5.7 Write unit tests for session management
 
 ---
 
-- [ ] **6.0 Prompt Enhancement (Stage 00)**
-  - [ ] 6.1 Create `src/enhancement/prompts.ts` with enhancement prompt templates:
-    - [ ] 6.1.1 Create `ANALYSIS_PROMPT` for 5-dimension evaluation (see PRD Section FR0.2)
-    - [ ] 6.1.2 Create `CLARIFYING_QUESTIONS_PROMPT` for generating 2-4 questions
-    - [ ] 6.1.3 Create `REFINEMENT_PROMPT` for generating refined prompt with extracted params
-  - [ ] 6.2 Create `src/enhancement/analyzer.ts` with prompt analysis:
-    - [ ] 6.2.1 Implement `analyzePrompt(prompt: string): PromptAnalysis` calling LLM
-    - [ ] 6.2.2 Evaluate across 5 dimensions: Destination Specificity (30%), Temporal Clarity (25%), Interest Articulation (20%), Constraint Definition (15%), Trip Type (10%)
-    - [ ] 6.2.3 Determine `isClear` based on decision logic (at least 3 dimensions inferable, destination OR temporal context present)
-    - [ ] 6.2.4 Calculate `confidence` score (0.0-1.0)
-  - [ ] 6.3 Create `src/enhancement/questions.ts` with question generation:
-    - [ ] 6.3.1 Implement `generateClarifyingQuestions(analysis: PromptAnalysis): string[]` returning 2-4 questions
-    - [ ] 6.3.2 Prioritize questions for missing critical dimensions (destination, timing)
-    - [ ] 6.3.3 Skip questions for dimensions already clear
-  - [ ] 6.4 Create `src/enhancement/refinement.ts` with refinement suggestion:
-    - [ ] 6.4.1 Implement `generateRefinement(prompt: string, analysis: PromptAnalysis): RefinementSuggestion`
-    - [ ] 6.4.2 Include refined prompt text
-    - [ ] 6.4.3 Include extracted parameters (destinations, dateRange, flexibility, interests, constraints, inferredTags)
-  - [ ] 6.5 Create `src/enhancement/extractor.ts` with parameter extraction:
-    - [ ] 6.5.1 Implement `extractSessionParams(refinedPrompt: string): Partial<SessionParams>`
-    - [ ] 6.5.2 Parse destinations from text
-    - [ ] 6.5.3 Parse dates and flexibility
-    - [ ] 6.5.4 Parse interests and constraints
-  - [ ] 6.6 Create `src/enhancement/enhancer.ts` with main enhancement logic:
-    - [ ] 6.6.1 Implement `enhancePrompt(prompt: string, options: EnhanceOptions): Promise<EnhancementResult>`
-    - [ ] 6.6.2 Implement iteration loop (max 3 iterations, configurable)
-    - [ ] 6.6.3 Handle user actions: Accept, Reject, Feedback
-    - [ ] 6.6.4 Implement 15-second timeout per LLM call
-    - [ ] 6.6.5 Implement 60-second total timeout
-    - [ ] 6.6.6 Implement graceful degradation (proceed with original on failure)
-    - [ ] 6.6.7 Track processing time and model used
-  - [ ] 6.7 Create `src/enhancement/index.ts` exporting enhancement functions
-  - [ ] 6.8 Write unit tests for enhancement logic with mocked LLM responses
+- [x] **6.0 Prompt Enhancement (Stage 00)**
+  - [x] 6.1 Create `src/enhancement/prompts.ts` with enhancement prompt templates:
+    - [x] 6.1.1 Create `ANALYSIS_PROMPT` for 5-dimension evaluation (see PRD Section FR0.2)
+    - [x] 6.1.2 Create `CLARIFYING_QUESTIONS_PROMPT` for generating 2-4 questions
+    - [x] 6.1.3 Create `REFINEMENT_PROMPT` for generating refined prompt with extracted params
+  - [x] 6.2 Create `src/enhancement/analyzer.ts` with prompt analysis:
+    - [x] 6.2.1 Implement `analyzePrompt(prompt: string): PromptAnalysis` calling LLM
+    - [x] 6.2.2 Evaluate across 5 dimensions: Destination Specificity (30%), Temporal Clarity (25%), Interest Articulation (20%), Constraint Definition (15%), Trip Type (10%)
+    - [x] 6.2.3 Determine `isClear` based on decision logic (at least 3 dimensions inferable, destination OR temporal context present)
+    - [x] 6.2.4 Calculate `confidence` score (0.0-1.0)
+  - [x] 6.3 Create `src/enhancement/questions.ts` with question generation:
+    - [x] 6.3.1 Implement `generateClarifyingQuestions(analysis: PromptAnalysis): string[]` returning 2-4 questions
+    - [x] 6.3.2 Prioritize questions for missing critical dimensions (destination, timing)
+    - [x] 6.3.3 Skip questions for dimensions already clear
+  - [x] 6.4 Create `src/enhancement/refinement.ts` with refinement suggestion:
+    - [x] 6.4.1 Implement `generateRefinement(prompt: string, analysis: PromptAnalysis): RefinementSuggestion`
+    - [x] 6.4.2 Include refined prompt text
+    - [x] 6.4.3 Include extracted parameters (destinations, dateRange, flexibility, interests, constraints, inferredTags)
+  - [x] 6.5 Create `src/enhancement/extractor.ts` with parameter extraction:
+    - [x] 6.5.1 Implement `extractSessionParams(refinedPrompt: string): Partial<SessionParams>`
+    - [x] 6.5.2 Parse destinations from text
+    - [x] 6.5.3 Parse dates and flexibility
+    - [x] 6.5.4 Parse interests and constraints
+  - [x] 6.6 Create `src/enhancement/enhancer.ts` with main enhancement logic:
+    - [x] 6.6.1 Implement `enhancePrompt(prompt: string, options: EnhanceOptions): Promise<EnhancementResult>`
+    - [x] 6.6.2 Implement iteration loop (max 3 iterations, configurable)
+    - [x] 6.6.3 Handle user actions: Accept, Reject, Feedback
+    - [x] 6.6.4 Implement 15-second timeout per LLM call
+    - [x] 6.6.5 Implement 60-second total timeout
+    - [x] 6.6.6 Implement graceful degradation (proceed with original on failure)
+    - [x] 6.6.7 Track processing time and model used
+  - [x] 6.7 Create `src/enhancement/index.ts` exporting enhancement functions
+  - [x] 6.8 Write unit tests for enhancement logic with mocked LLM responses
 
 ---
 
-- [ ] **7.0 Router Implementation (Stage 02)**
-  - [ ] 7.1 Create `src/router/prompts.ts` with router prompt templates:
-    - [ ] 7.1.1 Create `ROUTER_PROMPT` for generating WorkerPlan
-    - [ ] 7.1.2 Include session context, available workers, and output format instructions
-  - [ ] 7.2 Create `src/router/intent.ts` with intent enrichment:
-    - [ ] 7.2.1 Implement `enrichIntent(session: Session): EnrichedIntent`
-    - [ ] 7.2.2 Add inferredTags based on destinations, dates, and interests
-    - [ ] 7.2.3 Expand constraints with implied requirements
-  - [ ] 7.3 Create `src/router/queries.ts` with query generation:
-    - [ ] 7.3.1 Implement `generateQueryVariants(session: Session, workerId: string): string[]`
-    - [ ] 7.3.2 Create worker-specific query formats
-    - [ ] 7.3.3 Include constraint keywords in queries
-  - [ ] 7.4 Create `src/router/planner.ts` with worker planning:
-    - [ ] 7.4.1 Implement `selectWorkers(session: Session, availableWorkers: string[]): string[]`
-    - [ ] 7.4.2 Implement `allocateBudgets(workers: string[]): WorkerBudget[]` with per-worker limits
-  - [ ] 7.5 Create `src/router/defaults.ts` with default fallback:
-    - [ ] 7.5.1 Implement `getDefaultWorkerPlan(session: Session): WorkerPlan` for router failures
-    - [ ] 7.5.2 Include all workers with standard queries and default timeouts
-  - [ ] 7.6 Create `src/router/router.ts` with main router logic:
-    - [ ] 7.6.1 Implement `runRouter(session: Session, availableWorkers: string[]): Promise<WorkerPlan>`
-    - [ ] 7.6.2 Call LLM with router prompt
-    - [ ] 7.6.3 Parse and validate WorkerPlan response
-    - [ ] 7.6.4 Implement 5-second timeout
-    - [ ] 7.6.5 Fall back to default plan on failure
-  - [ ] 7.7 Create `src/router/index.ts` exporting router functions
-  - [ ] 7.8 Write unit tests for router with mocked LLM
+- [x] **7.0 Router Implementation (Stage 02)**
+  - [x] 7.1 Create `src/router/prompts.ts` with router prompt templates:
+    - [x] 7.1.1 Create `ROUTER_PROMPT` for generating WorkerPlan
+    - [x] 7.1.2 Include session context, available workers, and output format instructions
+  - [x] 7.2 Create `src/router/intent.ts` with intent enrichment:
+    - [x] 7.2.1 Implement `enrichIntent(session: Session): EnrichedIntent`
+    - [x] 7.2.2 Add inferredTags based on destinations, dates, and interests
+    - [x] 7.2.3 Expand constraints with implied requirements
+  - [x] 7.3 Create `src/router/queries.ts` with query generation:
+    - [x] 7.3.1 Implement `generateQueryVariants(session: Session, workerId: string): string[]`
+    - [x] 7.3.2 Create worker-specific query formats
+    - [x] 7.3.3 Include constraint keywords in queries
+  - [x] 7.4 Create `src/router/planner.ts` with worker planning:
+    - [x] 7.4.1 Implement `selectWorkers(session: Session, availableWorkers: string[]): string[]`
+    - [x] 7.4.2 Implement `allocateBudgets(workers: string[]): WorkerBudget[]` with per-worker limits
+  - [x] 7.5 Create `src/router/defaults.ts` with default fallback:
+    - [x] 7.5.1 Implement `getDefaultWorkerPlan(session: Session): WorkerPlan` for router failures
+    - [x] 7.5.2 Include all workers with standard queries and default timeouts
+  - [x] 7.6 Create `src/router/router.ts` with main router logic:
+    - [x] 7.6.1 Implement `runRouter(session: Session, availableWorkers: string[]): Promise<WorkerPlan>`
+    - [x] 7.6.2 Call LLM with router prompt
+    - [x] 7.6.3 Parse and validate WorkerPlan response
+    - [x] 7.6.4 Implement 5-second timeout
+    - [x] 7.6.5 Fall back to default plan on failure
+  - [x] 7.7 Create `src/router/index.ts` exporting router functions
+  - [x] 7.8 Write unit tests for router with mocked LLM
 
 ---
 
-- [ ] **8.0 Worker Framework & Interface**
-  - [ ] 8.1 Create `src/workers/types.ts` with worker interface definitions:
-    - [ ] 8.1.1 Define `Worker` interface with `id`, `provider`, `plan()`, `execute()` methods
-    - [ ] 8.1.2 Define `WorkerContext` with session, enrichedIntent, costTracker, circuitBreaker
-    - [ ] 8.1.3 Define `WorkerOutput` with workerId, status, candidates, rawData, error, durationMs, tokenUsage
-  - [ ] 8.2 Create `src/workers/registry.ts` with worker registry:
-    - [ ] 8.2.1 Implement `WorkerRegistry` class with `register()` and `get()` methods
-    - [ ] 8.2.2 Implement `getAvailableWorkers(): string[]`
-    - [ ] 8.2.3 Initialize with default workers (perplexity, places, youtube)
-  - [ ] 8.3 Create `src/workers/concurrency.ts` with concurrency control:
-    - [ ] 8.3.1 Implement `ConcurrencyLimiter` class with configurable limit (default 3)
-    - [ ] 8.3.2 Implement `acquire()` and `release()` methods
-    - [ ] 8.3.3 Implement queue for pending requests
-  - [ ] 8.4 Create `src/workers/executor.ts` with worker execution:
-    - [ ] 8.4.1 Implement `executeWorkers(plan: WorkerPlan, context: WorkerContext): Promise<WorkerOutput[]>`
-    - [ ] 8.4.2 Use `Promise.allSettled` for parallel execution
-    - [ ] 8.4.3 Apply per-worker timeouts from plan
-    - [ ] 8.4.4 Respect concurrency limit (3 simultaneous API calls)
-    - [ ] 8.4.5 Handle individual worker failures without stopping others
-    - [ ] 8.4.6 Save raw outputs to `03_worker_outputs/` directory
-  - [ ] 8.5 Create `src/workers/index.ts` exporting worker utilities
-  - [ ] 8.6 Write unit tests for worker framework
+- [x] **8.0 Worker Framework & Interface**
+  - [x] 8.1 Create `src/workers/types.ts` with worker interface definitions:
+    - [x] 8.1.1 Define `Worker` interface with `id`, `provider`, `plan()`, `execute()` methods
+    - [x] 8.1.2 Define `WorkerContext` with session, enrichedIntent, costTracker, circuitBreaker
+    - [x] 8.1.3 Define `WorkerOutput` with workerId, status, candidates, rawData, error, durationMs, tokenUsage
+  - [x] 8.2 Create `src/workers/registry.ts` with worker registry:
+    - [x] 8.2.1 Implement `WorkerRegistry` class with `register()` and `get()` methods
+    - [x] 8.2.2 Implement `getAvailableWorkers(): string[]`
+    - [x] 8.2.3 Initialize with default workers (perplexity, places, youtube)
+  - [x] 8.3 Create `src/workers/concurrency.ts` with concurrency control:
+    - [x] 8.3.1 Implement `ConcurrencyLimiter` class with configurable limit (default 3)
+    - [x] 8.3.2 Implement `acquire()` and `release()` methods
+    - [x] 8.3.3 Implement queue for pending requests
+  - [x] 8.4 Create `src/workers/executor.ts` with worker execution:
+    - [x] 8.4.1 Implement `executeWorkers(plan: WorkerPlan, context: WorkerContext): Promise<WorkerOutput[]>`
+    - [x] 8.4.2 Use `Promise.allSettled` for parallel execution
+    - [x] 8.4.3 Apply per-worker timeouts from plan
+    - [x] 8.4.4 Respect concurrency limit (3 simultaneous API calls)
+    - [x] 8.4.5 Handle individual worker failures without stopping others
+    - [x] 8.4.6 Save raw outputs to `03_worker_outputs/` directory
+  - [x] 8.5 Create `src/workers/index.ts` exporting worker utilities
+  - [x] 8.6 Write unit tests for worker framework
 
 ---
 
-- [ ] **9.0 Perplexity Web Knowledge Worker**
-  - [ ] 9.1 Create `src/workers/perplexity/client.ts` with API client:
-    - [ ] 9.1.1 Implement `PerplexityClient` class with API key from env
-    - [ ] 9.1.2 Implement `chat(messages: Message[], options: ChatOptions): Promise<ChatResponse>`
-    - [ ] 9.1.3 Use `sonar-pro` model
-    - [ ] 9.1.4 Handle rate limiting and errors
-    - [ ] 9.1.5 Track token usage (input and output)
-  - [ ] 9.2 Create `src/workers/perplexity/parser.ts` with response parsing:
-    - [ ] 9.2.1 Implement `parsePerplexityResponse(response: ChatResponse): Candidate[]`
-    - [ ] 9.2.2 Extract discrete candidates from Perplexity text
-    - [ ] 9.2.3 Extract citations as SourceRefs
-    - [ ] 9.2.4 Set `origin: 'web'` and appropriate confidence level
-  - [ ] 9.3 Create `src/workers/perplexity/worker.ts` with worker implementation:
-    - [ ] 9.3.1 Implement `PerplexityWorker` class extending Worker interface
-    - [ ] 9.3.2 Implement `plan(session, enrichedIntent)` generating search queries
-    - [ ] 9.3.3 Implement `execute(plan, context)` calling API and parsing results
-    - [ ] 9.3.4 Handle errors and return partial results
-  - [ ] 9.4 Create `src/workers/perplexity/index.ts` exporting worker
-  - [ ] 9.5 Write unit tests with mocked API responses
+- [x] **9.0 Perplexity Web Knowledge Worker**
+  - [x] 9.1 Create `src/workers/perplexity/client.ts` with API client:
+    - [x] 9.1.1 Implement `PerplexityClient` class with API key from env
+    - [x] 9.1.2 Implement `chat(messages: Message[], options: ChatOptions): Promise<ChatResponse>`
+    - [x] 9.1.3 Use `sonar-pro` model
+    - [x] 9.1.4 Handle rate limiting and errors
+    - [x] 9.1.5 Track token usage (input and output)
+  - [x] 9.2 Create `src/workers/perplexity/parser.ts` with response parsing:
+    - [x] 9.2.1 Implement `parsePerplexityResponse(response: ChatResponse): Candidate[]`
+    - [x] 9.2.2 Extract discrete candidates from Perplexity text
+    - [x] 9.2.3 Extract citations as SourceRefs
+    - [x] 9.2.4 Set `origin: 'web'` and appropriate confidence level
+  - [x] 9.3 Create `src/workers/perplexity/worker.ts` with worker implementation:
+    - [x] 9.3.1 Implement `PerplexityWorker` class extending Worker interface
+    - [x] 9.3.2 Implement `plan(session, enrichedIntent)` generating search queries
+    - [x] 9.3.3 Implement `execute(plan, context)` calling API and parsing results
+    - [x] 9.3.4 Handle errors and return partial results
+  - [x] 9.4 Create `src/workers/perplexity/index.ts` exporting worker
+  - [x] 9.5 Write unit tests with mocked API responses
 
 ---
 
-- [ ] **10.0 Google Places Worker**
-  - [ ] 10.1 Create `src/workers/places/client.ts` with API client:
-    - [ ] 10.1.1 Implement `PlacesClient` class with API key from env
-    - [ ] 10.1.2 Implement `textSearch(query: string, options: SearchOptions): Promise<Place[]>`
-    - [ ] 10.1.3 Implement `getPlaceDetails(placeId: string): Promise<PlaceDetails>`
-    - [ ] 10.1.4 Handle API errors and quotas
-    - [ ] 10.1.5 Track API call counts for cost calculation
-  - [ ] 10.2 Create `src/workers/places/mapper.ts` with Place to Candidate mapping:
-    - [ ] 10.2.1 Implement `mapPlaceToCandidate(place: PlaceDetails): Candidate`
-    - [ ] 10.2.2 Generate Google Maps URL as SourceRef: `https://maps.google.com/?cid=<place_id>`
-    - [ ] 10.2.3 Map ratings, price level, address to metadata
-    - [ ] 10.2.4 Set `origin: 'places'` and `confidence: 'verified'`
-  - [ ] 10.3 Create `src/workers/places/worker.ts` with worker implementation:
-    - [ ] 10.3.1 Implement `PlacesWorker` class extending Worker interface
-    - [ ] 10.3.2 Implement `plan(session, enrichedIntent)` generating location-based queries
-    - [ ] 10.3.3 Implement `execute(plan, context)` calling API and mapping results
-    - [ ] 10.3.4 Fetch place details for top results
-  - [ ] 10.4 Create `src/workers/places/index.ts` exporting worker
-  - [ ] 10.5 Write unit tests with mocked API responses
+- [x] **10.0 Google Places Worker**
+  - [x] 10.1 Create `src/workers/places/client.ts` with API client:
+    - [x] 10.1.1 Implement `PlacesClient` class with API key from env
+    - [x] 10.1.2 Implement `textSearch(query: string, options: SearchOptions): Promise<Place[]>`
+    - [x] 10.1.3 Implement `getPlaceDetails(placeId: string): Promise<PlaceDetails>`
+    - [x] 10.1.4 Handle API errors and quotas
+    - [x] 10.1.5 Track API call counts for cost calculation
+  - [x] 10.2 Create `src/workers/places/mapper.ts` with Place to Candidate mapping:
+    - [x] 10.2.1 Implement `mapPlaceToCandidate(place: PlaceDetails): Candidate`
+    - [x] 10.2.2 Generate Google Maps URL as SourceRef: `https://maps.google.com/?cid=<place_id>`
+    - [x] 10.2.3 Map ratings, price level, address to metadata
+    - [x] 10.2.4 Set `origin: 'places'` and `confidence: 'verified'`
+  - [x] 10.3 Create `src/workers/places/worker.ts` with worker implementation:
+    - [x] 10.3.1 Implement `PlacesWorker` class extending Worker interface
+    - [x] 10.3.2 Implement `plan(session, enrichedIntent)` generating location-based queries
+    - [x] 10.3.3 Implement `execute(plan, context)` calling API and mapping results
+    - [x] 10.3.4 Fetch place details for top results
+  - [x] 10.4 Create `src/workers/places/index.ts` exporting worker
+  - [x] 10.5 Write unit tests with mocked API responses
 
 ---
 
-- [ ] **11.0 YouTube Social Signals Worker**
-  - [ ] 11.1 Create `src/workers/youtube/client.ts` with YouTube Data API client:
-    - [ ] 11.1.1 Implement `YouTubeClient` class with API key from env
-    - [ ] 11.1.2 Implement `search(query: string, options: SearchOptions): Promise<VideoSearchResult[]>` (100 units/call)
-    - [ ] 11.1.3 Implement `getVideoDetails(videoIds: string[]): Promise<VideoDetails[]>` (1 unit/call)
-    - [ ] 11.1.4 Track quota usage
-    - [ ] 11.1.5 Handle quota exceeded (403) errors
-  - [ ] 11.2 Create `src/workers/youtube/transcript.ts` with transcript fetching:
-    - [ ] 11.2.1 Install `youtube-transcript` npm package
-    - [ ] 11.2.2 Implement `fetchTranscript(videoId: string): Promise<string | null>`
-    - [ ] 11.2.3 Handle videos without transcripts gracefully
-    - [ ] 11.2.4 Combine transcript segments into full text
-  - [ ] 11.3 Create `src/workers/youtube/filters.ts` with quality filtering:
-    - [ ] 11.3.1 Implement `filterVideos(videos: VideoDetails[]): VideoDetails[]`
-    - [ ] 11.3.2 Apply filters from PRD Section 15.6:
+- [x] **11.0 YouTube Social Signals Worker**
+  - [x] 11.1 Create `src/workers/youtube/client.ts` with YouTube Data API client:
+    - [x] 11.1.1 Implement `YouTubeClient` class with API key from env
+    - [x] 11.1.2 Implement `search(query: string, options: SearchOptions): Promise<VideoSearchResult[]>` (100 units/call)
+    - [x] 11.1.3 Implement `getVideoDetails(videoIds: string[]): Promise<VideoDetails[]>` (1 unit/call)
+    - [x] 11.1.4 Track quota usage
+    - [x] 11.1.5 Handle quota exceeded (403) errors
+  - [x] 11.2 Create `src/workers/youtube/transcript.ts` with transcript fetching:
+    - [x] 11.2.1 Install `youtube-transcript` npm package
+    - [x] 11.2.2 Implement `fetchTranscript(videoId: string): Promise<string | null>`
+    - [x] 11.2.3 Handle videos without transcripts gracefully
+    - [x] 11.2.4 Combine transcript segments into full text
+  - [x] 11.3 Create `src/workers/youtube/filters.ts` with quality filtering:
+    - [x] 11.3.1 Implement `filterVideos(videos: VideoDetails[]): VideoDetails[]`
+    - [x] 11.3.2 Apply filters from PRD Section 15.6:
       - View count > 10,000
       - Publish date < 2 years
       - Duration 4-20 minutes
       - Has captions: true
       - Channel subscribers > 1,000
-  - [ ] 11.4 Create `src/workers/youtube/prompts.ts` with extraction prompts:
-    - [ ] 11.4.1 Create `EXTRACTION_PROMPT` template for candidate extraction from transcripts (see PRD Section 15.7)
-  - [ ] 11.5 Create `src/workers/youtube/extractor.ts` with LLM extraction:
-    - [ ] 11.5.1 Implement `extractCandidatesFromTranscript(transcript: string, destination: string): Promise<YouTubeCandidate[]>`
-    - [ ] 11.5.2 Call Gemini 3 Flash for extraction
-    - [ ] 11.5.3 Parse JSON response into candidates
-    - [ ] 11.5.4 Set `origin: 'youtube'` and `confidence: 'provisional'`
-    - [ ] 11.5.5 Include video metadata (videoId, channelName, viewCount, publishedAt, timestampSeconds)
-  - [ ] 11.6 Create `src/workers/youtube/worker.ts` with worker implementation:
-    - [ ] 11.6.1 Implement `YouTubeWorker` class extending Worker interface
-    - [ ] 11.6.2 Implement `plan(session, enrichedIntent)` generating 5 search queries (see PRD Section 15.5)
-    - [ ] 11.6.3 Implement `execute(plan, context)`:
+  - [x] 11.4 Create `src/workers/youtube/prompts.ts` with extraction prompts:
+    - [x] 11.4.1 Create `EXTRACTION_PROMPT` template for candidate extraction from transcripts (see PRD Section 15.7)
+  - [x] 11.5 Create `src/workers/youtube/extractor.ts` with LLM extraction:
+    - [x] 11.5.1 Implement `extractCandidatesFromTranscript(transcript: string, destination: string): Promise<YouTubeCandidate[]>`
+    - [x] 11.5.2 Call Gemini 3 Flash for extraction
+    - [x] 11.5.3 Parse JSON response into candidates
+    - [x] 11.5.4 Set `origin: 'youtube'` and `confidence: 'provisional'`
+    - [x] 11.5.5 Include video metadata (videoId, channelName, viewCount, publishedAt, timestampSeconds)
+  - [x] 11.6 Create `src/workers/youtube/worker.ts` with worker implementation:
+    - [x] 11.6.1 Implement `YouTubeWorker` class extending Worker interface
+    - [x] 11.6.2 Implement `plan(session, enrichedIntent)` generating 5 search queries (see PRD Section 15.5)
+    - [x] 11.6.3 Implement `execute(plan, context)`:
       - Search for videos
       - Fetch video details
       - Filter by quality
       - Fetch transcripts
       - Extract candidates via LLM
-    - [ ] 11.6.4 Handle quota exceeded by disabling worker for run
-  - [ ] 11.7 Create `src/workers/youtube/index.ts` exporting worker
-  - [ ] 11.8 Write unit tests with mocked API and transcript responses
+    - [x] 11.6.4 Handle quota exceeded by disabling worker for run
+  - [x] 11.7 Create `src/workers/youtube/index.ts` exporting worker
+  - [x] 11.8 Write unit tests with mocked API and transcript responses
 
 ---
 
-- [ ] **12.0 Normalization Stage (Stage 04)**
-  - [ ] 12.1 Create `src/stages/normalize.ts` with normalization logic:
-    - [ ] 12.1.1 Implement `normalizeStage(workerOutputs: WorkerOutput[], context: StageContext): Promise<Candidate[]>`
-    - [ ] 12.1.2 Process each worker's output in parallel
-    - [ ] 12.1.3 Apply 10-second timeout per worker's normalization
-    - [ ] 12.1.4 Skip failed normalizations with error logging
-    - [ ] 12.1.5 Merge all candidates into single array
-    - [ ] 12.1.6 Assign unique `candidateId` to each candidate
-  - [ ] 12.2 Implement per-worker normalization:
-    - [ ] 12.2.1 `normalizePerplexityOutput(output: WorkerOutput): Candidate[]`
-    - [ ] 12.2.2 `normalizePlacesOutput(output: WorkerOutput): Candidate[]`
-    - [ ] 12.2.3 `normalizeYouTubeOutput(output: WorkerOutput): Candidate[]`
-  - [ ] 12.3 Implement candidate ID generation:
-    - [ ] 12.3.1 Generate stable IDs based on title + location hash
-    - [ ] 12.3.2 Handle ID collisions
-  - [ ] 12.4 Write checkpoint to `04_candidates_normalized.json`
-  - [ ] 12.5 Write unit tests for normalization
+- [x] **12.0 Normalization Stage (Stage 04)**
+  - [x] 12.1 Create `src/stages/normalize.ts` with normalization logic:
+    - [x] 12.1.1 Implement `normalizeStage(workerOutputs: WorkerOutput[], context: StageContext): Promise<Candidate[]>`
+    - [x] 12.1.2 Process each worker's output in parallel
+    - [x] 12.1.3 Apply 10-second timeout per worker's normalization
+    - [x] 12.1.4 Skip failed normalizations with error logging
+    - [x] 12.1.5 Merge all candidates into single array
+    - [x] 12.1.6 Assign unique `candidateId` to each candidate
+  - [x] 12.2 Implement per-worker normalization:
+    - [x] 12.2.1 `normalizePerplexityOutput(output: WorkerOutput): Candidate[]`
+    - [x] 12.2.2 `normalizePlacesOutput(output: WorkerOutput): Candidate[]`
+    - [x] 12.2.3 `normalizeYouTubeOutput(output: WorkerOutput): Candidate[]`
+  - [x] 12.3 Implement candidate ID generation:
+    - [x] 12.3.1 Generate stable IDs based on title + location hash
+    - [x] 12.3.2 Handle ID collisions
+  - [x] 12.4 Write checkpoint to `04_candidates_normalized.json`
+  - [x] 12.5 Write unit tests for normalization
 
 ---
 
-- [ ] **13.0 Deduplication & Clustering (Stage 05)**
-  - [ ] 13.1 Create `src/dedupe/normalize.ts` with content normalization:
-    - [ ] 13.1.1 Implement `normalizeContent(content: string): string` (see PRD Section 14.1)
+- [x] **13.0 Deduplication & Clustering (Stage 05)**
+  - [x] 13.1 Create `src/dedupe/normalize.ts` with content normalization:
+    - [x] 13.1.1 Implement `normalizeContent(content: string): string` (see PRD Section 14.1)
       - Lowercase all characters
       - Remove URLs
       - Remove emoji
       - Remove punctuation
       - Collapse whitespace
       - Trim
-  - [ ] 13.2 Create `src/dedupe/hash.ts` with hash generation:
-    - [ ] 13.2.1 Implement `generateCandidateHash(candidate: Candidate): string`
-    - [ ] 13.2.2 Use `${placeId}|${normalizedTitle}|${city}` as seed
-    - [ ] 13.2.3 Generate SHA-256 hash truncated to 16 characters
-  - [ ] 13.3 Create `src/dedupe/similarity.ts` with similarity functions:
-    - [ ] 13.3.1 Implement `jaccardSimilarity(a: string, b: string): number`
-    - [ ] 13.3.2 Implement `haversineDistance(coordA: Coords, coordB: Coords): number`
-    - [ ] 13.3.3 Implement `calculateLocationSimilarity(a: Candidate, b: Candidate): number`
+  - [x] 13.2 Create `src/dedupe/hash.ts` with hash generation:
+    - [x] 13.2.1 Implement `generateCandidateHash(candidate: Candidate): string`
+    - [x] 13.2.2 Use `${placeId}|${normalizedTitle}|${city}` as seed
+    - [x] 13.2.3 Generate SHA-256 hash truncated to 16 characters
+  - [x] 13.3 Create `src/dedupe/similarity.ts` with similarity functions:
+    - [x] 13.3.1 Implement `jaccardSimilarity(a: string, b: string): number`
+    - [x] 13.3.2 Implement `haversineDistance(coordA: Coords, coordB: Coords): number`
+    - [x] 13.3.3 Implement `calculateLocationSimilarity(a: Candidate, b: Candidate): number`
       - If both have coordinates: use haversine (<50m = 1.0, <200m = 0.8, <500m = 0.5)
       - Fallback: normalized location string match
-    - [ ] 13.3.4 Implement `candidateSimilarity(a: Candidate, b: Candidate): number`
+    - [x] 13.3.4 Implement `candidateSimilarity(a: Candidate, b: Candidate): number`
       - 60% title similarity + 40% location similarity
-  - [ ] 13.4 Create `src/dedupe/cluster.ts` with clustering:
-    - [ ] 13.4.1 Implement Phase 1: ID-based exact matching (placeId or hash)
-    - [ ] 13.4.2 Implement Phase 2: similarity-based clustering (threshold 0.80)
-    - [ ] 13.4.3 Implement `formClusters(candidates: Candidate[]): ClusterInfo[]`
-    - [ ] 13.4.4 Implement merge strategy:
+  - [x] 13.4 Create `src/dedupe/cluster.ts` with clustering:
+    - [x] 13.4.1 Implement Phase 1: ID-based exact matching (placeId or hash)
+    - [x] 13.4.2 Implement Phase 2: similarity-based clustering (threshold 0.85)
+    - [x] 13.4.3 Implement `formClusters(candidates: Candidate[]): ClusterResult`
+    - [x] 13.4.4 Implement merge strategy:
       - Keep candidate with highest score as representative
-      - Preserve up to 3 alternates with different origins
       - Merge sourceRefs from all cluster members
-  - [ ] 13.5 Create `src/stages/dedupe.ts` with stage implementation:
-    - [ ] 13.5.1 Implement `dedupeStage(candidates: Candidate[], context: StageContext): Promise<DedupeResult>`
-    - [ ] 13.5.2 Write checkpoint to `05_candidates_deduped.json`
-  - [ ] 13.6 Create `src/dedupe/index.ts` exporting dedupe functions
-  - [ ] 13.7 Write unit tests for deduplication and clustering
+      - Merge tags from all cluster members
+  - [x] 13.5 Create `src/stages/dedupe.ts` with stage implementation:
+    - [x] 13.5.1 Implement `dedupeStage: TypedStage<NormalizedCandidatesOutput | Candidate[], DedupeStageOutput>`
+    - [x] 13.5.2 Write checkpoint to `05_candidates_deduped.json`
+  - [x] 13.6 Create `src/dedupe/index.ts` exporting dedupe functions
+  - [x] 13.7 Write unit tests for deduplication and clustering
 
 ---
 

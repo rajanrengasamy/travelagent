@@ -8,6 +8,7 @@
  * @see PRD Section 0.5 - Context Storage
  */
 
+import type { Table } from '@lancedb/lancedb';
 import { generateEmbedding } from './embeddings.js';
 import {
   getCollection,
@@ -25,6 +26,29 @@ import {
   type PrdSection,
   type SessionSummary,
 } from './types.js';
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Delete existing record by ID if it exists (for upsert pattern)
+ *
+ * This enables idempotent store operations - calling store multiple times
+ * with the same ID will update the record rather than create duplicates.
+ *
+ * @param collection - LanceDB table/collection
+ * @param id - Record ID to delete
+ */
+async function deleteExistingById(collection: Table, id: string): Promise<void> {
+  try {
+    // Escape single quotes in id to prevent SQL injection
+    const escapedId = id.replace(/'/g, "''");
+    await collection.delete(`id = '${escapedId}'`);
+  } catch {
+    // Ignore errors - record may not exist, which is fine for upsert
+  }
+}
 
 /**
  * Input type for journal entry (without embedding - generated internally)
@@ -47,10 +71,11 @@ export type PrdSectionInput = Omit<PrdSection, 'embedding'>;
 export type SessionSummaryInput = Omit<SessionSummary, 'embedding'>;
 
 /**
- * Store a journal entry in the database
+ * Store a journal entry in the database (upsert)
  *
  * Generates an embedding from the content and summary, then stores
- * the complete entry in the journal_entries collection.
+ * the complete entry in the journal_entries collection. If an entry
+ * with the same ID already exists, it will be replaced (idempotent).
  *
  * @param entry - Journal entry data (without embedding)
  * @throws Error if embedding generation or storage fails
@@ -66,27 +91,34 @@ export async function storeJournalEntry(entry: JournalEntryInput): Promise<void>
   };
 
   const collection = await getCollection(COLLECTION_NAMES.JOURNAL_ENTRIES);
+
+  // Upsert: delete existing record if present, then add new one
+  await deleteExistingById(collection, entry.id);
+
   const row = journalEntryToRow(fullEntry);
   await collection.add([row]);
 }
 
 /**
- * Store a TODO snapshot in the database
+ * Store a TODO snapshot in the database (upsert)
  *
  * Generates an embedding from the section descriptions and items,
- * then stores the complete snapshot in the todo_snapshots collection.
+ * including task IDs for better semantic search matching.
+ * Format: "${item.id}: ${item.description}" for each incomplete item.
+ * If a snapshot with the same ID already exists, it will be replaced (idempotent).
  *
  * @param snapshot - TODO snapshot data (without embedding)
  * @throws Error if embedding generation or storage fails
  */
 export async function storeTodoSnapshot(snapshot: TodoSnapshotInput): Promise<void> {
-  // Generate embedding from section names and item descriptions
+  // Generate embedding from section names and item descriptions with IDs
   const textParts: string[] = [];
   for (const section of snapshot.sections) {
     textParts.push(section.name);
     for (const item of section.items) {
       if (!item.completed) {
-        textParts.push(item.description);
+        // Include task ID for better search matching (e.g., "14.0.1: Implement ranking")
+        textParts.push(`${item.id}: ${item.description}`);
       }
     }
   }
@@ -99,15 +131,20 @@ export async function storeTodoSnapshot(snapshot: TodoSnapshotInput): Promise<vo
   };
 
   const collection = await getCollection(COLLECTION_NAMES.TODO_SNAPSHOTS);
+
+  // Upsert: delete existing record if present, then add new one
+  await deleteExistingById(collection, snapshot.id);
+
   const row = todoSnapshotToRow(fullSnapshot);
   await collection.add([row]);
 }
 
 /**
- * Store a PRD section in the database
+ * Store a PRD section in the database (upsert)
  *
  * Generates an embedding from the title and content, then stores
- * the complete section in the prd_sections collection.
+ * the complete section in the prd_sections collection. If a section
+ * with the same ID already exists, it will be replaced (idempotent).
  *
  * @param section - PRD section data (without embedding)
  * @throws Error if embedding generation or storage fails
@@ -123,15 +160,20 @@ export async function storePrdSection(section: PrdSectionInput): Promise<void> {
   };
 
   const collection = await getCollection(COLLECTION_NAMES.PRD_SECTIONS);
+
+  // Upsert: delete existing record if present, then add new one
+  await deleteExistingById(collection, section.id);
+
   const row = prdSectionToRow(fullSection);
   await collection.add([row]);
 }
 
 /**
- * Store a session summary in the database
+ * Store a session summary in the database (upsert)
  *
  * Generates an embedding from the summary and work completed items,
  * then stores the complete summary in the session_summaries collection.
+ * If a summary with the same ID already exists, it will be replaced (idempotent).
  *
  * @param summary - Session summary data (without embedding)
  * @throws Error if embedding generation or storage fails
@@ -154,6 +196,10 @@ export async function storeSessionSummary(summary: SessionSummaryInput): Promise
   };
 
   const collection = await getCollection(COLLECTION_NAMES.SESSION_SUMMARIES);
+
+  // Upsert: delete existing record if present, then add new one
+  await deleteExistingById(collection, summary.id);
+
   const row = sessionSummaryToRow(fullSummary);
   await collection.add([row]);
 }
@@ -223,7 +269,10 @@ export async function updateEntry<T extends { id: string }>(
 }
 
 /**
- * Store multiple journal entries in batch
+ * Store multiple journal entries in batch (upsert)
+ *
+ * For batch operations, existing entries with matching IDs are deleted
+ * before inserting the new batch (idempotent).
  *
  * @param entries - Array of journal entries to store
  * @throws Error if embedding generation or storage fails
@@ -242,12 +291,19 @@ export async function storeJournalEntries(entries: JournalEntryInput[]): Promise
   }));
 
   const collection = await getCollection(COLLECTION_NAMES.JOURNAL_ENTRIES);
+
+  // Upsert: delete existing records before batch insert
+  await Promise.all(entries.map((entry) => deleteExistingById(collection, entry.id)));
+
   const rows = fullEntries.map(journalEntryToRow);
   await collection.add(rows);
 }
 
 /**
- * Store multiple PRD sections in batch
+ * Store multiple PRD sections in batch (upsert)
+ *
+ * For batch operations, existing sections with matching IDs are deleted
+ * before inserting the new batch (idempotent).
  *
  * @param sections - Array of PRD sections to store
  * @throws Error if embedding generation or storage fails
@@ -266,6 +322,10 @@ export async function storePrdSections(sections: PrdSectionInput[]): Promise<voi
   }));
 
   const collection = await getCollection(COLLECTION_NAMES.PRD_SECTIONS);
+
+  // Upsert: delete existing records before batch insert
+  await Promise.all(sections.map((section) => deleteExistingById(collection, section.id)));
+
   const rows = fullSections.map(prdSectionToRow);
   await collection.add(rows);
 }

@@ -21,6 +21,7 @@ import {
   COLLECTION_NAMES,
   type JournalEntry,
   type TodoSnapshot,
+  type TodoSection,
   type PrdSection,
   type SessionSummary,
   type ContextBundle,
@@ -421,4 +422,56 @@ export async function getTodoSnapshots(limit: number = 10): Promise<TodoSnapshot
     console.error('Failed to get TODO snapshots:', error);
     return [];
   }
+}
+
+/**
+ * Get a specific TODO section by pattern match
+ *
+ * Searches the most recent TODO snapshot for a section matching the pattern.
+ * Pattern matching is case-insensitive and checks section name and sectionId.
+ *
+ * @param pattern - Pattern to match (e.g., "14.0", "Ranking", "Phase 14")
+ * @returns The matched section with all its items, or null if not found
+ *
+ * @example
+ * // Find by section number
+ * const section = await getTodoSectionByPattern("14.0");
+ *
+ * @example
+ * // Find by keyword
+ * const section = await getTodoSectionByPattern("Ranking");
+ */
+export async function getTodoSectionByPattern(
+  pattern: string
+): Promise<TodoSection | null> {
+  const todoState = await getCurrentTodoState();
+
+  if (!todoState) {
+    return null;
+  }
+
+  const lowerPattern = pattern.toLowerCase();
+
+  // Search for matching section
+  for (const section of todoState.sections) {
+    // Check section name (e.g., "Phase 14.0 - Ranking Stage")
+    if (section.name.toLowerCase().includes(lowerPattern)) {
+      return section;
+    }
+
+    // Check sectionId (e.g., "phase-14-0")
+    if (section.sectionId.toLowerCase().includes(lowerPattern.replace(/\./g, '-'))) {
+      return section;
+    }
+
+    // Check for numeric pattern match (e.g., "14" matches "Phase 14.0")
+    if (/^\d+(\.\d+)?$/.test(pattern)) {
+      const phasePattern = new RegExp(`phase\\s+${pattern.replace('.', '\\.')}`, 'i');
+      if (phasePattern.test(section.name)) {
+        return section;
+      }
+    }
+  }
+
+  return null;
 }

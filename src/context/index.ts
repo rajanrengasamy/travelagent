@@ -34,3 +34,15 @@ export * from './journal-generator.js';
 
 // Seeding utilities
 export * from './seed.js';
+
+// Session cache for cross-skill context sharing
+export * from './session-cache.js';
+
+// VectorDB lock mechanism for concurrent access
+export * from './lock.js';
+
+// Session preflight for unified context retrieval
+export * from './session-preflight.js';
+
+// PRD/TODO section mapping registry
+export * from './section-mapping.js';

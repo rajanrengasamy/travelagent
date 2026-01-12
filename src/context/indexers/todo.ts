@@ -476,3 +476,90 @@ export function getSnapshotSummary(snapshot: TodoSnapshot): string {
 
   return lines.join('\n');
 }
+
+/**
+ * Options for granular TODO summary generation
+ */
+export interface GranularTodoSummaryOptions {
+  /** Maximum number of items to include (default: 50) */
+  maxItems?: number;
+  /** Whether to show completed items (default: false) */
+  showCompleted?: boolean;
+  /** Filter to only show sections matching this pattern */
+  sectionFilter?: string;
+}
+
+/**
+ * Generates a granular hierarchical summary of TODO tasks
+ *
+ * Renders tasks with proper parent-child indentation and filtering options.
+ * Useful for detailed context in /startagain or similar commands.
+ *
+ * @param snapshot - TODO snapshot to summarize
+ * @param options - Options for filtering and limiting output
+ * @returns Formatted markdown string with hierarchical tasks
+ */
+export function getGranularTodoSummary(
+  snapshot: TodoSnapshot,
+  options: GranularTodoSummaryOptions = {}
+): string {
+  const { maxItems = 50, showCompleted = false, sectionFilter } = options;
+  const lines: string[] = [];
+  let itemCount = 0;
+
+  for (const section of snapshot.sections) {
+    // Apply section filter if provided (case-insensitive)
+    if (sectionFilter && !section.name.toLowerCase().includes(sectionFilter.toLowerCase())) {
+      continue;
+    }
+
+    lines.push(`### ${section.name} (${section.completionPct}%)`);
+
+    // Build parent-child map for hierarchical rendering
+    const byParent = new Map<string | undefined, TodoItem[]>();
+    for (const item of section.items) {
+      // Skip completed items if not showing them
+      if (!showCompleted && item.completed) continue;
+
+      const parent = item.parentId;
+      if (!byParent.has(parent)) byParent.set(parent, []);
+      byParent.get(parent)!.push(item);
+    }
+
+    // Recursive function to render items with proper indentation
+    const renderItem = (item: TodoItem, indent: number): boolean => {
+      if (itemCount >= maxItems) return false;
+
+      const status = item.completed ? '[x]' : '[ ]';
+      const prefix = '  '.repeat(indent);
+      lines.push(`${prefix}- ${status} ${item.id} ${item.description}`);
+      itemCount++;
+
+      // Render children recursively
+      const children = byParent.get(item.id) || [];
+      for (const child of children) {
+        if (!renderItem(child, indent + 1)) return false;
+      }
+      return true;
+    };
+
+    // Render top-level items (those without a parent)
+    const topLevelItems = byParent.get(undefined) || [];
+    let shouldBreak = false;
+    for (const item of topLevelItems) {
+      if (!renderItem(item, 0)) {
+        shouldBreak = true;
+        break;
+      }
+    }
+
+    lines.push('');
+
+    if (shouldBreak) {
+      lines.push(`... (truncated at ${maxItems} items)`);
+      break;
+    }
+  }
+
+  return lines.join('\n');
+}

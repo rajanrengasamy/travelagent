@@ -1,16 +1,23 @@
 Reflect on the current session and create a journal entry. This serves as a retrospective capturing what was accomplished, issues encountered, and context needed for future sessions.
 
+> **CRITICAL**: Do NOT use `npx tsx -e "..."` for inline TypeScript execution.
+> It fails due to ESM/CJS incompatibility. Always use the storage script.
+
 ## Instructions
 
-1. **Review the session** - Analyze what was discussed and accomplished in this conversation
-2. **Read existing context** - Check journal.md (if exists), task.md, and prd.md for continuity
-3. **Generate entry** - Create a journal entry following the structure below
-4. **Store in VectorDB** - If context persistence is available, store the entry for RAG retrieval
-5. **Append to journal.md** - Also append to the markdown file as backup
+### Step 1: Review the Session
 
-## Journal Entry Structure
+Analyze what was discussed and accomplished in this conversation:
+- What tasks were completed?
+- What files were modified/created?
+- What issues were encountered and how were they resolved?
+- What decisions were made?
+- What's left to do?
 
-Use this format for the new entry:
+### Step 2: Generate the Journal Entry
+
+Create a journal entry following this structure:
+
 ```
 ---
 
@@ -43,148 +50,102 @@ Use this format for the new entry:
 ---
 ```
 
-## Vector Storage Integration (Phase 0.0)
+### Step 3: Append to journal.md
 
-After generating the journal entry, perform these additional steps if `src/context/` infrastructure exists:
+Use bash heredoc to append the entry:
 
-### Step 1: Check VectorDB Availability
+```bash
+cat >> journal.md << 'EOF'
 
-```typescript
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+---
 
-// Check if LanceDB is available
-const dbPath = path.join(os.homedir(), '.travelagent', 'context', 'lancedb');
-const vectorDbAvailable = fs.existsSync(dbPath);
+## Session: 2026-01-12 10:00 AEST
 
-if (!vectorDbAvailable) {
-  console.warn('VectorDB unavailable, falling back to file-based storage only');
+### Summary
+[Your summary here]
+
+### Work Completed
+- [Items here]
+
+[... rest of entry ...]
+
+---
+EOF
+echo "Journal entry appended to journal.md"
+```
+
+### Step 4: Check VectorDB Availability
+
+```bash
+ls ~/.travelagent/context/lancedb/ 2>/dev/null && echo "VectorDB: AVAILABLE" || echo "VectorDB: NOT FOUND"
+```
+
+If **NOT FOUND**: Skip to the end. The entry in journal.md will be indexed later via `npm run seed-context`.
+
+### Step 5: Store in VectorDB
+
+If VectorDB is available, create a JSON file and run the storage script:
+
+```bash
+cat > /tmp/journal-entry.json << 'EOF'
+{
+  "summary": "Brief 1-2 sentence summary of the session",
+  "content": "Full description of what was accomplished, issues resolved, etc.",
+  "topics": ["topic1", "topic2", "topic3"],
+  "workCompleted": [
+    "First completed item",
+    "Second completed item"
+  ],
+  "openItems": [
+    "First open item",
+    "Second open item"
+  ]
 }
+EOF
+
+npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json
 ```
 
-### Step 2: Generate Embeddings
+The script handles:
+- VectorDB lock acquisition (prevents conflicts with parallel sessions)
+- Embedding generation via OpenAI
+- Storing journal entry in `journal_entries` collection
+- Storing session summary in `session_summaries` collection
+- Snapshotting current TODO state
 
-If VectorDB is available, generate embeddings for the journal entry:
+### Step 6: Cleanup
 
-```typescript
-import { generateEmbedding } from '../src/context/embeddings.js';
-
-// Generate embedding for the full journal entry
-const contentEmbedding = await generateEmbedding(journalEntry.content);
-
-// Generate embedding for the summary (for session_summaries)
-const summaryEmbedding = await generateEmbedding(journalEntry.summary);
+```bash
+rm /tmp/journal-entry.json 2>/dev/null
 ```
 
-### Step 3: Store in journal_entries Collection
+## Quick Reference
 
-```typescript
-import { storeJournalEntry } from '../src/context/storage.js';
-
-await storeJournalEntry({
-  id: `journal-${Date.now()}`,
-  timestamp: new Date().toISOString(),
-  content: fullJournalEntry,
-  summary: summarySection,
-  topics: extractTopics(journalEntry), // e.g., ["vector-db", "rag", "context-persistence"]
-  embedding: contentEmbedding
-});
-```
-
-### Step 4: Create Condensed session_summaries Entry
-
-Store a condensed version for efficient retrieval during /startagain:
-
-```typescript
-import { storeSessionSummary } from '../src/context/storage.js';
-import { createCondensedSummary } from '../src/context/journal-generator.js';
-
-const condensed = createCondensedSummary(journalEntry);
-
-await storeSessionSummary({
-  id: `session-${Date.now()}`,
-  timestamp: new Date().toISOString(),
-  summary: condensed,
-  workCompleted: workCompletedItems,
-  openItems: openItems,
-  embedding: summaryEmbedding
-});
-```
-
-### Step 5: Snapshot Current TODO State
-
-Capture the current TODO state for future comparison:
-
-```typescript
-import { snapshotTodo } from '../src/context/indexers/todo.js';
-
-await snapshotTodo('todo/tasks-phase0-travel-discovery.md');
-```
-
-## Auto-Journal Trigger Detection
-
-This command may be auto-triggered when thresholds are met:
-
-```typescript
-import { shouldTriggerJournal, type SessionStats } from '../src/context/auto-journal.js';
-
-const stats: SessionStats = {
-  todosCompleted: 5,           // Trigger threshold: 3+
-  significantActionsCount: 12, // Trigger threshold: 10+
-  durationMinutes: 30,         // Minimum: 15 minutes
-  sessionStartTime: sessionStart
-};
-
-if (shouldTriggerJournal(stats)) {
-  // Auto-generate a more concise entry
-}
-```
-
-When auto-triggered, generate a more concise entry focused on:
-- What changed (files, tasks)
-- Key decisions made
-- Blockers encountered
-
-## Fallback Behavior
-
-If VectorDB is unavailable (LanceDB not installed, API key missing, or errors):
-
-1. **Log a warning**: "VectorDB unavailable, falling back to file-based storage"
-2. **Proceed with markdown-only storage** to `journal.md`
-3. **The entry will be indexed** when VectorDB becomes available via `npm run seed-context`
-
-```typescript
-try {
-  // Attempt VectorDB storage
-  await storeJournalEntry(entry);
-  await storeSessionSummary(summary);
-  await snapshotTodo(todoPath);
-  console.log('Journal entry stored in VectorDB');
-} catch (error) {
-  console.warn('VectorDB storage failed, using file-based fallback:', error.message);
-  // Continue with markdown file append only
-}
-```
+| Step | Command |
+|------|---------|
+| Check VectorDB | `ls ~/.travelagent/context/lancedb/` |
+| Store entry | `npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json` |
+| Seed VectorDB | `npm run seed-context` |
 
 ## File Locations
 
 | File | Location | Purpose |
 |------|----------|---------|
 | journal.md | Project root | Human-readable backup |
-| journal_entries.lance | `~/.travelagent/context/lancedb/` | Full journal entries with embeddings |
-| session_summaries.lance | `~/.travelagent/context/lancedb/` | Condensed summaries for quick retrieval |
-| todo_snapshots.lance | `~/.travelagent/context/lancedb/` | TODO state snapshots |
+| journal_entries.lance | `~/.travelagent/context/lancedb/` | Full entries with embeddings |
+| session_summaries.lance | `~/.travelagent/context/lancedb/` | Condensed for /startagain |
+| store-journal-entry.ts | `scripts/` | VectorDB storage script |
 
 ## Behavior
 
 - **If journal.md exists**: Append new entry at the end
-- **If journal.md doesn't exist**: Create it with a header and first entry
+- **If journal.md doesn't exist**: Create it with header and first entry
 - **Tone**: Concise, factual, future-oriented
-- **Focus**: Capture enough context that a fresh session can resume seamlessly
+- **Focus**: Capture enough context for seamless session resumption
 
 ## File Header (for new journal.md)
-```
+
+```markdown
 # Project Journal
 
 This file maintains session history for continuity across Claude Code sessions.
@@ -193,78 +154,73 @@ Use alongside `todo/tasks-phase0-travel-discovery.md` (task list) and `docs/phas
 > Note: Entries are also stored in VectorDB for semantic retrieval via `/startagain`.
 ```
 
-## Complete Workflow Example
+## Fallback Behavior
 
-```typescript
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import {
-  generateSessionSummary,
-  formatJournalEntry,
-  createCondensedSummary,
-  extractTopics
-} from '../src/context/journal-generator.js';
+If VectorDB is unavailable:
+1. The journal.md entry is still saved (human-readable backup)
+2. Run `npm run seed-context` later to index existing entries
+3. The seed script will parse journal.md and populate VectorDB
 
-async function createJournalEntry(conversationContext: string) {
-  // 1. Generate the journal entry
-  const entry = await generateSessionSummary(conversationContext);
-  const formattedEntry = formatJournalEntry(entry);
+## Example Session
 
-  // 2. Append to journal.md (always do this)
-  const journalPath = path.join(process.cwd(), 'journal.md');
-  if (!fs.existsSync(journalPath)) {
-    // Create new file with header
-    const header = `# Project Journal\n\nThis file maintains session history....\n\n`;
-    fs.writeFileSync(journalPath, header + formattedEntry);
-  } else {
-    // Append to existing
-    fs.appendFileSync(journalPath, '\n' + formattedEntry);
-  }
-  console.log('Journal entry appended to journal.md');
+```bash
+# 1. Append entry to journal.md
+cat >> journal.md << 'EOF'
 
-  // 3. Attempt VectorDB storage
-  const dbPath = path.join(os.homedir(), '.travelagent', 'context', 'lancedb');
-  if (fs.existsSync(dbPath)) {
-    try {
-      const { generateEmbedding } = await import('../src/context/embeddings.js');
-      const { storeJournalEntry, storeSessionSummary } = await import('../src/context/storage.js');
-      const { snapshotTodo } = await import('../src/context/indexers/todo.js');
+---
 
-      // Generate embeddings
-      const contentEmbedding = await generateEmbedding(entry.content);
-      const summaryEmbedding = await generateEmbedding(entry.summary);
+## Session: 2026-01-12 10:00 AEST
 
-      // Store journal entry
-      await storeJournalEntry({
-        id: `journal-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        content: entry.content,
-        summary: entry.summary,
-        topics: entry.topics,
-        embedding: contentEmbedding
-      });
+### Summary
+Fixed authentication bug in login flow. Added rate limiting to API endpoints.
 
-      // Store session summary
-      await storeSessionSummary({
-        id: `session-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        summary: createCondensedSummary(entry),
-        workCompleted: entry.workCompleted,
-        openItems: entry.openItems,
-        embedding: summaryEmbedding
-      });
+### Work Completed
+- Fixed JWT token validation in `src/auth/validate.ts`
+- Added rate limiter middleware in `src/middleware/rate-limit.ts`
+- Updated tests (15 new, all passing)
 
-      // Snapshot TODO
-      await snapshotTodo('todo/tasks-phase0-travel-discovery.md');
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Token expiry not checked | Added expiry validation | Resolved |
 
-      console.log('Journal entry stored in VectorDB');
-    } catch (error) {
-      console.warn('VectorDB storage failed:', error.message);
-    }
-  } else {
-    console.warn('VectorDB not available, using file-based storage only');
-    console.log('Run `npm run seed-context` to index existing entries later');
-  }
+### Key Decisions
+- Using sliding window for rate limiting (not fixed window)
+
+### Learnings
+- JWT `exp` claim is in seconds, not milliseconds
+
+### Open Items / Blockers
+- [ ] Add rate limit headers to responses
+
+### Context for Next Session
+Auth is working. Rate limiting in place. Next: add response headers.
+
+---
+EOF
+
+# 2. Check VectorDB
+ls ~/.travelagent/context/lancedb/
+
+# 3. Store in VectorDB (if available)
+cat > /tmp/journal-entry.json << 'EOF'
+{
+  "summary": "Fixed authentication bug in login flow. Added rate limiting to API endpoints.",
+  "content": "Fixed JWT token validation in src/auth/validate.ts. Added rate limiter middleware. Token expiry validation was missing - now checks exp claim properly.",
+  "topics": ["auth", "jwt", "rate-limiting", "security"],
+  "workCompleted": [
+    "Fixed JWT token validation",
+    "Added rate limiter middleware",
+    "Updated tests (15 new)"
+  ],
+  "openItems": [
+    "Add rate limit headers to responses"
+  ]
 }
+EOF
+
+npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json
+
+# 4. Cleanup
+rm /tmp/journal-entry.json
 ```

@@ -156,8 +156,11 @@ export const EnhancementConfigSchema = z.object({
   /** Maximum number of enhancement iterations */
   maxIterations: z.number().int().min(1).max(10).default(3),
 
-  /** Timeout in milliseconds */
+  /** Timeout per LLM call in milliseconds */
   timeoutMs: z.number().int().min(1000).max(60000).default(15000),
+
+  /** Total enhancement timeout in milliseconds (FR0.7) */
+  totalTimeoutMs: z.number().int().min(10000).max(300000).default(60000),
 
   /** Automatically accept enhancements without user confirmation */
   autoEnhance: z.boolean().default(false),
@@ -173,5 +176,6 @@ export const DEFAULT_ENHANCEMENT_CONFIG: EnhancementConfig = {
   model: 'gemini',
   maxIterations: 3,
   timeoutMs: 15000,
+  totalTimeoutMs: 60000,
   autoEnhance: false,
 };

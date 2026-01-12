@@ -83,6 +83,7 @@ const {
   getPrdSectionById,
   getSessionSummaryById,
   getTodoSnapshots,
+  getTodoSectionByPattern,
 } = await import('./retrieval.js');
 
 describe('Context Retrieval Operations', () => {
@@ -615,6 +616,94 @@ describe('Context Retrieval Operations', () => {
       const results = await queryJournalEntries('test');
 
       expect(results).toEqual([]);
+    });
+  });
+
+  describe('getTodoSectionByPattern', () => {
+    const mockTodoSnapshot = {
+      id: 'todo-001',
+      timestamp: '2024-01-15T10:00:00Z',
+      sections: JSON.stringify([
+        {
+          name: 'Phase 14.0 - Ranking Stage',
+          sectionId: 'phase-14-0',
+          items: [
+            { id: '14.0', description: 'Ranking implementation', completed: false },
+            { id: '14.0.1', description: 'Create scorer', completed: true, parentId: '14.0' },
+          ],
+          completionPct: 50,
+        },
+        {
+          name: 'Phase 15.0 - Validation',
+          sectionId: 'phase-15-0',
+          items: [{ id: '15.0', description: 'Validation stage', completed: false }],
+          completionPct: 0,
+        },
+      ]),
+      overallCompletionPct: 25,
+      embedding: mockEmbedding,
+    };
+
+    it('should find section by number pattern', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('14.0');
+
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('Phase 14.0 - Ranking Stage');
+      expect(result!.items).toHaveLength(2);
+    });
+
+    it('should find section by keyword', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('Ranking');
+
+      expect(result).not.toBeNull();
+      expect(result!.name).toContain('Ranking');
+    });
+
+    it('should find section by phase pattern', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('15');
+
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('Phase 15.0 - Validation');
+    });
+
+    it('should return null if no section matches', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('99.0');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null if no TODO snapshot exists', async () => {
+      (collectionExists as any).mockResolvedValue(false);
+
+      const result = await getTodoSectionByPattern('14.0');
+
+      expect(result).toBeNull();
+    });
+
+    it('should be case-insensitive', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('ranking');
+
+      expect(result).not.toBeNull();
+      expect(result!.name).toContain('Ranking');
+    });
+
+    it('should match sectionId pattern', async () => {
+      mockToArray.mockResolvedValue([mockTodoSnapshot]);
+
+      const result = await getTodoSectionByPattern('phase-15');
+
+      expect(result).not.toBeNull();
+      expect(result!.sectionId).toBe('phase-15-0');
     });
   });
 });

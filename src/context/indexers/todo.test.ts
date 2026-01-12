@@ -34,6 +34,7 @@ const {
   extractSectionId,
   generateSnapshotId,
   getSnapshotSummary,
+  getGranularTodoSummary,
 } = await import('./todo.js');
 
 describe('TODO Indexer', () => {
@@ -607,6 +608,139 @@ Nothing here yet.
       expect(sections).toHaveLength(2);
       expect(sections[0].items).toHaveLength(0);
       expect(sections[1].items).toHaveLength(0);
+    });
+  });
+
+  describe('getGranularTodoSummary', () => {
+    const createSnapshot = (): TodoSnapshot => ({
+      id: 'test-snapshot',
+      timestamp: '2024-01-15T10:30:00Z',
+      sections: [
+        {
+          name: 'Phase 14.0 - Ranking Stage',
+          sectionId: 'phase-14-0',
+          items: [
+            { id: '14.0', description: 'Ranking implementation', completed: false },
+            { id: '14.0.1', description: 'Create scorer module', completed: true, parentId: '14.0' },
+            { id: '14.0.2', description: 'Add scoring tests', completed: false, parentId: '14.0' },
+            {
+              id: '14.0.2.1',
+              description: 'Unit tests for scorer',
+              completed: false,
+              parentId: '14.0.2',
+            },
+          ],
+          completionPct: 25,
+        },
+        {
+          name: 'Phase 15.0 - Validation',
+          sectionId: 'phase-15-0',
+          items: [
+            { id: '15.0', description: 'Validation stage', completed: false },
+            { id: '15.0.1', description: 'Schema validation', completed: false, parentId: '15.0' },
+          ],
+          completionPct: 0,
+        },
+      ],
+      overallCompletionPct: 12,
+      embedding: [],
+    });
+
+    it('should render hierarchical task structure', () => {
+      const snapshot = createSnapshot();
+      const summary = getGranularTodoSummary(snapshot);
+
+      // Should contain section headers
+      expect(summary).toContain('### Phase 14.0 - Ranking Stage (25%)');
+      expect(summary).toContain('### Phase 15.0 - Validation (0%)');
+
+      // Should contain top-level tasks
+      expect(summary).toContain('- [ ] 14.0 Ranking implementation');
+
+      // Should NOT contain completed items by default
+      expect(summary).not.toContain('14.0.1 Create scorer module');
+
+      // Should contain nested items with indentation
+      expect(summary).toContain('  - [ ] 14.0.2 Add scoring tests');
+      expect(summary).toContain('    - [ ] 14.0.2.1 Unit tests for scorer');
+    });
+
+    it('should show completed items when showCompleted is true', () => {
+      const snapshot = createSnapshot();
+      const summary = getGranularTodoSummary(snapshot, { showCompleted: true });
+
+      // Should contain completed items
+      expect(summary).toContain('[x] 14.0.1 Create scorer module');
+    });
+
+    it('should filter by section name', () => {
+      const snapshot = createSnapshot();
+      const summary = getGranularTodoSummary(snapshot, { sectionFilter: '14.0' });
+
+      // Should only contain Phase 14.0
+      expect(summary).toContain('Phase 14.0');
+      expect(summary).not.toContain('Phase 15.0');
+    });
+
+    it('should filter by keyword', () => {
+      const snapshot = createSnapshot();
+      const summary = getGranularTodoSummary(snapshot, { sectionFilter: 'Ranking' });
+
+      // Should only contain the Ranking section
+      expect(summary).toContain('Ranking Stage');
+      expect(summary).not.toContain('Validation');
+    });
+
+    it('should limit items with maxItems option', () => {
+      const snapshot = createSnapshot();
+      const summary = getGranularTodoSummary(snapshot, { maxItems: 2 });
+
+      // Should contain truncation message
+      expect(summary).toContain('truncated at 2 items');
+
+      // Count the task lines (lines starting with "- [ ]" or "- [x]")
+      const taskLines = summary.split('\n').filter((line) => /^\s*-\s\[[ x]\]/.test(line));
+      expect(taskLines.length).toBe(2);
+    });
+
+    it('should handle empty sections', () => {
+      const emptySnapshot: TodoSnapshot = {
+        id: 'empty',
+        timestamp: '2024-01-15T10:30:00Z',
+        sections: [],
+        overallCompletionPct: 0,
+        embedding: [],
+      };
+
+      const summary = getGranularTodoSummary(emptySnapshot);
+      expect(summary).toBe('');
+    });
+
+    it('should handle section with all completed items (no output when showCompleted=false)', () => {
+      const allCompletedSnapshot: TodoSnapshot = {
+        id: 'all-done',
+        timestamp: '2024-01-15T10:30:00Z',
+        sections: [
+          {
+            name: 'Phase 1.0 - Done',
+            sectionId: 'phase-1-0',
+            items: [
+              { id: '1.0', description: 'First task', completed: true },
+              { id: '1.1', description: 'Second task', completed: true },
+            ],
+            completionPct: 100,
+          },
+        ],
+        overallCompletionPct: 100,
+        embedding: [],
+      };
+
+      const summary = getGranularTodoSummary(allCompletedSnapshot);
+
+      // Should have section header but no items
+      expect(summary).toContain('### Phase 1.0 - Done (100%)');
+      expect(summary).not.toContain('- [ ]');
+      expect(summary).not.toContain('- [x]');
     });
   });
 });

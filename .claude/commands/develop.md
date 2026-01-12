@@ -1,236 +1,206 @@
 ---
 description: Develop features using 5 parallel dev agents
-argument-hint: <section_number | feature description>
+argument-hint: <section_number | comma-separated sections | feature description>
 ---
 
-You are a **Development Lead** coordinating 5 dev agents to implement features in parallel.
+You are a **Development Lead** coordinating dev agents to implement features in parallel.
 
 ## Arguments
 
 The user's development request: $ARGUMENTS
 
 This could be:
-- A section number (e.g., "10" to implement Section 10 from tasks-phase0-travel-discovery.md)
+- A single section number (e.g., "10" to implement Section 10)
+- **Multiple section numbers** (e.g., "10,11" to develop sections in parallel)
 - A feature description (e.g., "add retry logic to all API calls")
-- A specific task (e.g., "implement the YouTube worker")
 
-## Phase 0: VectorDB Context Retrieval (REQUIRED)
+---
 
-**IMPORTANT**: Before reading any markdown files, you MUST first attempt to retrieve context from the vector database.
+## Phase 0: VectorDB Context Retrieval (MANDATORY)
 
-### Step 0.1: Check VectorDB Availability
+> **CRITICAL**: Do NOT use `npx tsx -e "..."` for inline TypeScript execution.
+> It fails due to ESM/CJS incompatibility. Always use the provided scripts.
 
-```bash
-ls ~/.travelagent/context/lancedb/ 2>/dev/null || echo "VectorDB not available"
-```
+### CRITICAL RULES - READ CAREFULLY
 
-### Step 0.2: If VectorDB Available - Use Retrieval API
+**YOU MUST DO:**
+1. Run the retrieval script via Bash tool
+2. Use the VectorDB output as your source of truth
 
-```typescript
-// IMPORTANT: Load .env first for API keys
-import 'dotenv/config';
+**YOU MUST NOT DO:**
+1. Read `todo/tasks-phase0-travel-discovery.md` directly with the Read tool
+2. Read `docs/phase_0_prd_unified.md` directly with the Read tool
+3. Read `journal.md` directly with the Read tool
+4. Skip running the retrieval script
+5. Use `npx tsx -e` for inline TypeScript (it will fail)
 
-import {
-  queryPrdSections,
-  getCurrentTodoState,
-  queryJournalEntries
-} from './src/context/retrieval.js';
+### Step 0.1: Check VectorDB Available
 
-// Get relevant context based on the development request
-const prdSections = await queryPrdSections("$ARGUMENTS requirements", 5);
-const todoState = await getCurrentTodoState();
-const history = await queryJournalEntries("$ARGUMENTS", 3);
-
-console.log("=== RELEVANT PRD SECTIONS ===");
-prdSections.forEach(s => console.log(`${s.id}: ${s.title}\n${s.content.substring(0, 1500)}\n`));
-
-console.log("=== CURRENT TODO STATE ===");
-if (todoState) {
-  console.log(`Overall Progress: ${todoState.overallCompletionPct}%`);
-  todoState.sections.forEach(s => console.log(`  ${s.name}: ${s.completionPct}%`));
-}
-
-console.log("=== HISTORICAL CONTEXT ===");
-history.forEach(e => console.log(`${e.timestamp}: ${e.summary}`));
-```
-
-### Step 0.3: Staleness Check
-
-**IMPORTANT**: Check if VectorDB is stale by comparing timestamps:
+Run this with the Bash tool:
 
 ```bash
-# Get file modification times
-TODO_MTIME=$(stat -f %m todo/tasks-phase0-travel-discovery.md 2>/dev/null || stat -c %Y todo/tasks-phase0-travel-discovery.md 2>/dev/null)
-PRD_MTIME=$(stat -f %m docs/phase_0_prd_unified.md 2>/dev/null || stat -c %Y docs/phase_0_prd_unified.md 2>/dev/null)
-echo "File mtimes - TODO: $TODO_MTIME, PRD: $PRD_MTIME"
-
-# Get VectorDB collection times
-ls -la ~/.travelagent/context/lancedb/*/*.lance 2>/dev/null | head -3
+ls ~/.travelagent/context/lancedb/ 2>/dev/null && echo "VectorDB: AVAILABLE" || echo "VectorDB: NOT FOUND"
 ```
 
-If files are newer than VectorDB, warn:
-```
-⚠️ VectorDB may be STALE - run `npm run seed-context` to re-index
+**If NOT FOUND**: STOP. Tell the user to run `npm run seed-context` first. Do not proceed.
+
+### Step 0.2: Retrieve Context from VectorDB
+
+**ACTUALLY RUN THIS COMMAND** with the Bash tool:
+
+```bash
+npx tsx scripts/retrieve-context.ts "Section $ARGUMENTS development"
 ```
 
-### Step 0.4: Fallback Warning
+This outputs:
+- Recent session summaries
+- Current TODO state (structured)
+- Relevant PRD sections (semantically matched)
 
-If VectorDB is NOT available:
+**USE THIS OUTPUT** - do not read raw files.
+
+### Step 0.3: If You Need More Detail
+
+For specific section tasks, use the section lookup script:
+
+```bash
+npx tsx scripts/get-todo-section.ts "$ARGUMENTS"
 ```
-⚠️ VectorDB not available - reading files directly (may be stale)
-Run `npm run seed-context` to index the latest context.
+
+This returns the full section data including all items and completion status.
+
+---
+
+## Phase 1: Parse Arguments
+
+Check if `$ARGUMENTS` contains a comma:
+
+**If comma detected** (e.g., "10,11,12"):
+1. Split into array of section numbers
+2. Proceed to Phase 2 (dependency check)
+
+**If single value**:
+- If numeric: Single section - proceed to Phase 3
+- If text: Feature description - proceed to Phase 3 with feature mode
+
+---
+
+## Phase 2: Multi-Section Dependency Analysis
+
+Use Haiku for fast dependency analysis. The agent MUST use VectorDB:
+
+```
+Task tool:
+subagent_type: "general-purpose"
+model: "haiku"
+prompt: |
+  Analyze if these TODO sections can be developed in parallel.
+
+  Sections: [insert section numbers]
+
+  ## REQUIRED: Run this Bash command to get TODO state
+
+  ```bash
+  npx tsx scripts/retrieve-context.ts "sections [numbers]"
+  ```
+
+  DO NOT read markdown files directly.
+  USE the VectorDB output.
+
+  Known patterns:
+  - Worker sections (9, 10, 11) are independent
+  - Processing stages (12-18) are sequential
+
+  Return JSON:
+  {
+    "canParallel": ["10", "11"],
+    "mustSequential": ["12"],
+    "reason": "Section 12 imports from workers"
+  }
+```
+
+Display results and confirm with user via `AskUserQuestion`.
+
+---
+
+## Phase 3: Execute Development
+
+### For Single Section or Feature
+
+Invoke the `develop-section` skill directly:
+
+```
+Skill tool:
+skill: "develop-section"
+args: "$ARGUMENTS"
+```
+
+The skill handles:
+- Context retrieval from VectorDB (via script execution)
+- Spawning 5 parallel dev agents
+- Consolidation and verification
+- TODO updates
+
+### For Multiple Parallel Sections
+
+Launch skills in a SINGLE message for true parallelism:
+
+```
+For sections 10, 11 approved:
+
+Skill tool calls (in ONE message):
+- skill: "develop-section", args: "10"
+- skill: "develop-section", args: "11"
+
+Each runs in forked context with Opus 4.5.
 ```
 
 ---
 
-## Phase 1: Understand the Request
+## Phase 4: Synthesize Results
 
-**Note**: If Phase 0 successfully retrieved context from VectorDB, use that data. Only read files if VectorDB was unavailable.
+After skill(s) complete:
 
-1. **If a section number is provided:**
-   - Use VectorDB TODO state or read `todo/tasks-phase0-travel-discovery.md` to extract tasks
-   - Use VectorDB PRD sections or read `docs/phase_0_prd_unified.md` for requirements
-   - Identify existing files that relate to this section
-
-2. **If a feature/task description is provided:**
-   - Query VectorDB for relevant PRD sections or read the full PRD
-   - Query VectorDB for TODO state or read the TODO file
-   - Search the codebase for related existing code
-
-3. **Create a development brief:**
-   - What needs to be built
-   - Which files need to be created/modified
-   - Dependencies on existing code
-   - Key requirements and constraints
-
-## Phase 2: Plan the Work
-
-Break down the development work into 5 parallel workstreams. Consider:
-
-- **Natural boundaries**: Different files, modules, or concerns
-- **Dependencies**: Tasks that can run independently vs. those that need sequencing
-- **Complexity balance**: Distribute work roughly evenly
-
-Example workstream division for this project:
-- **Agent 1**: Schemas and type definitions (`src/schemas/`)
-- **Agent 2**: Storage layer and infrastructure (`src/storage/`, `src/pipeline/`)
-- **Agent 3**: Core stage/pipeline logic (`src/stages/`)
-- **Agent 4**: Worker implementations (`src/workers/`)
-- **Agent 5**: CLI commands, tests, and integration (`src/cli/`, `tests/`)
-
-Adjust based on what's actually being built.
-
-## Phase 3: Spawn Development Agents
-
-Use the **Task tool** to spawn **5 dev agents in parallel** (in a single message with 5 Task tool calls).
-
-**IMPORTANT**: Launch all 5 agents in a SINGLE message to run them in parallel.
-
-### Agent Template
-
-For each agent, customize this template:
-
-```
-subagent_type: "dev"
-prompt: |
-  You are a senior developer implementing features for the Travel Discovery Orchestrator CLI project.
-
-  ## Project Context
-
-  This is a TypeScript CLI tool with an 11-stage pipeline:
-  Enhancement (00) → Intake (01) → Router (02) → Workers (03) → Normalize (04) → Dedupe (05) → Rank (06) → Validate (07) → Top Candidates (08) → Aggregate (09) → Results (10)
-
-  Workers: Perplexity (web knowledge), Google Places, YouTube (social signals)
-
-  Key references:
-  - PRD: docs/phase_0_prd_unified.md
-  - TODO: todo/tasks-phase0-travel-discovery.md
-  - Existing patterns: [mention relevant existing files]
-
-  ## Your Assignment
-
-  [Specific tasks for this agent - be detailed and specific]
-
-  ## Files to Create/Modify
-
-  [List exact files this agent is responsible for]
-
-  ## Implementation Guidelines
-
-  1. Follow existing code patterns in the project
-  2. Use TypeScript with strict types (no `any`)
-  3. Use Zod schemas for runtime validation
-  4. Use atomic writes via `src/storage/atomic.ts` for file persistence
-  5. Wrap external API calls with `withRetry()` from `src/errors/retry.ts`
-  6. Track token/API usage via `CostTracker` for cost visibility
-  7. Add JSDoc comments for exported functions
-  8. Handle errors gracefully with descriptive messages
-  9. Keep functions focused and under 50 lines when possible
-  10. Stage checkpoints use format `XX_stage_name.json` with metadata
-
-  ## Coordination Notes
-
-  [Any info about what other agents are building that this agent needs to know]
-
-  ## Verification
-
-  After implementing:
-  1. Run `npx tsc --noEmit` to verify types
-  2. Ensure code follows project conventions
-  3. Test manually if applicable
-
-  ## Report Back
-
-  Provide:
-  - Files created/modified
-  - Summary of implementation
-  - Any decisions made
-  - Any concerns or TODOs for follow-up
-```
-
-## Phase 4: Consolidate Results
-
-After all 5 agents complete:
-
-1. **Collect all reports** from each agent
-2. **Verify integration**:
-   - Check that files don't conflict
-   - Verify imports/exports work together
-   - Run `npx tsc --noEmit` for full type check
-3. **Run tests**: `npm test`
-4. **Update TODO** (if implementing a section):
-   - Mark completed tasks as [x] in `todo/tasks-phase0-travel-discovery.md`
-5. **Create summary** for the user:
-   - What was built
-   - Files created/modified
+1. Collect summaries from each invocation
+2. Present consolidated report:
+   - Files created/modified per section
+   - Tests passing/failing
    - Any issues encountered
-   - Suggested next steps
+3. List queued sections if any were sequential
 
-## Phase 5: Journal Entry
+---
 
-After completing Phase 4, run the `/journal` command to document:
-- Features implemented
-- Key implementation decisions
-- Any open items or follow-up needed
-- Context for the next session
+## Phase 5: Journal (MANDATORY)
+
+**You MUST run /journal before completing.**
+
+```
+Skill tool:
+skill: "journal"
+```
+
+---
 
 ## Execution Checklist
 
-- [ ] Development request understood
-- [ ] PRD and TODO reviewed for context
-- [ ] Work broken into 5 parallel workstreams
-- [ ] All 5 agents launched in parallel (single message)
-- [ ] All agent results collected
-- [ ] Type check passed (`npx tsc --noEmit`)
-- [ ] Tests passed (`npm test`)
-- [ ] TODO updated (if applicable)
+- [ ] **VectorDB check passed** (ls command showed AVAILABLE)
+- [ ] **Retrieval script executed** (npx tsx scripts/retrieve-context.ts)
+- [ ] **DID NOT read raw markdown files**
+- [ ] Arguments parsed (single vs multi-section)
+- [ ] Dependency analysis (if multi-section)
+- [ ] develop-section skill(s) invoked
+- [ ] Results consolidated
 - [ ] Summary provided to user
-- [ ] Journal entry created via /journal
+- [ ] **MANDATORY: /journal invoked**
 
-## Tips for Effective Parallelization
+---
 
-1. **Schemas first**: If new types are needed, have one agent create them so others can import
-2. **Clear file ownership**: Each agent should own specific files to avoid conflicts
-3. **Interface contracts**: Define function signatures upfront so agents can code to interfaces
-4. **Minimize dependencies**: Structure work so agents don't block each other
-5. **Stage boundaries**: Align agent work with pipeline stage boundaries when possible
+## Common Mistakes to AVOID
+
+1. ❌ Using Read tool on `todo/tasks-phase0-travel-discovery.md`
+2. ❌ Using Read tool on `docs/phase_0_prd_unified.md`
+3. ❌ Using Read tool on `journal.md`
+4. ❌ Skipping the `npx tsx scripts/retrieve-context.ts` step
+5. ❌ "Seeing" code examples but not actually running them with Bash
+
+**The retrieval script exists. Run it.**

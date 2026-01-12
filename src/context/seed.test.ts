@@ -13,6 +13,7 @@ import {
   DEFAULT_SEED_PATHS,
   type SeedResult,
   type SeedAllResult,
+  type SeedAllOptions,
 } from './seed.js';
 
 describe('seed', () => {
@@ -281,6 +282,44 @@ The actual first session.
       expect(typeof seed.parseJournalEntries).toBe('function');
       expect(typeof seed.parseJournalDate).toBe('function');
       expect(typeof seed.ensureContextDirs).toBe('function');
+    });
+  });
+
+  describe('SeedAllOptions interface', () => {
+    it('should have correct interface shape', () => {
+      // Test that the interface accepts the expected properties
+      const options1: SeedAllOptions = {};
+      expect(options1.clearExisting).toBeUndefined();
+
+      const options2: SeedAllOptions = { clearExisting: true };
+      expect(options2.clearExisting).toBe(true);
+
+      const options3: SeedAllOptions = { clearExisting: false };
+      expect(options3.clearExisting).toBe(false);
+
+      const options4: SeedAllOptions = {
+        paths: { prd: 'custom/prd.md' },
+        clearExisting: true,
+      };
+      expect(options4.paths?.prd).toBe('custom/prd.md');
+      expect(options4.clearExisting).toBe(true);
+    });
+
+    it('should accept paths and clearExisting together', () => {
+      const options: SeedAllOptions = {
+        paths: {
+          prd: 'docs/prd.md',
+          todo: 'todo/tasks.md',
+          journal: 'journal.md',
+        },
+        clearExisting: true,
+      };
+
+      expect(options.paths).toBeDefined();
+      expect(options.paths?.prd).toBe('docs/prd.md');
+      expect(options.paths?.todo).toBe('todo/tasks.md');
+      expect(options.paths?.journal).toBe('journal.md');
+      expect(options.clearExisting).toBe(true);
     });
   });
 });

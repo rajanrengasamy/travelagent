@@ -380,18 +380,32 @@ export async function seedExistingJournal(
 }
 
 /**
+ * Options for seedAll function
+ */
+export interface SeedAllOptions {
+  /** Custom paths for source files */
+  paths?: {
+    prd?: string;
+    todo?: string;
+    journal?: string;
+  };
+  /** If true, clear existing collections before seeding */
+  clearExisting?: boolean;
+}
+
+/**
  * Seeds all context data sources
  *
  * Runs seeding for PRD, TODO, and journal in sequence.
+ * With upsert pattern, running multiple times is safe (idempotent).
+ * Use clearExisting: true to explicitly clear collections first.
  *
- * @param paths - Optional custom paths for each source
+ * @param options - Seeding options (paths and clearExisting flag)
  * @returns Promise resolving to combined results
  */
-export async function seedAll(paths?: {
-  prd?: string;
-  todo?: string;
-  journal?: string;
-}): Promise<SeedAllResult> {
+export async function seedAll(options?: SeedAllOptions): Promise<SeedAllResult> {
+  const { paths, clearExisting = false } = options ?? {};
+
   console.log('=== Context Database Seeding ===\n');
 
   // Ensure directories exist
@@ -401,8 +415,20 @@ export async function seedAll(paths?: {
 
   // Connect to database and initialize collections
   console.log('Initializing database...');
-  const { connectToDb, initializeCollections } = await import('./db.js');
+  const { connectToDb, initializeCollections, dropCollection } = await import('./db.js');
+  const { COLLECTION_NAMES } = await import('./types.js');
   await connectToDb();
+
+  // Clear existing collections if requested
+  if (clearExisting) {
+    console.log('Clearing existing collections...');
+    await dropCollection(COLLECTION_NAMES.PRD_SECTIONS);
+    await dropCollection(COLLECTION_NAMES.TODO_SNAPSHOTS);
+    await dropCollection(COLLECTION_NAMES.JOURNAL_ENTRIES);
+    await dropCollection(COLLECTION_NAMES.SESSION_SUMMARIES);
+    console.log('Collections cleared.\n');
+  }
+
   await initializeCollections();
   console.log('Database initialized.\n');
 
@@ -443,7 +469,20 @@ export async function seedAll(paths?: {
 }
 
 /**
+ * Parse CLI arguments for --clear flag
+ */
+function parseCliArgs(): { clearExisting: boolean } {
+  const args = process.argv.slice(2);
+  const clearExisting = args.includes('--clear') || args.includes('-c');
+  return { clearExisting };
+}
+
+/**
  * CLI entry point
+ *
+ * Usage:
+ *   npm run seed-context           # Seed with upsert (safe to run multiple times)
+ *   npm run seed-context -- --clear  # Clear all collections before seeding
  */
 async function main(): Promise<void> {
   try {
@@ -454,7 +493,13 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    const results = await seedAll();
+    const { clearExisting } = parseCliArgs();
+
+    if (clearExisting) {
+      console.log('Running with --clear: will clear existing collections before seeding\n');
+    }
+
+    const results = await seedAll({ clearExisting });
 
     if (!results.overallSuccess) {
       process.exit(1);
