@@ -722,40 +722,40 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
-- [ ] **14.0 Ranking Stage with Diversity (Stage 06)**
-  - [ ] 14.1 Create `src/ranking/credibility.ts` with credibility scoring:
-    - [ ] 14.1.1 Define `ORIGIN_CREDIBILITY` constants (see PRD Section 14.2)
+- [x] **14.0 Ranking Stage with Diversity (Stage 06)**
+  - [x] 14.1 Create `src/ranking/credibility.ts` with credibility scoring:
+    - [x] 14.1.1 Define `ORIGIN_CREDIBILITY` constants (see PRD Section 14.2)
       - places: 90
       - web_multi: 80
       - web_single: 60
       - youtube_verified: 50
       - youtube_provisional: 30
-    - [ ] 14.1.2 Define `VERIFICATION_BOOSTS` constants
+    - [x] 14.1.2 Define `VERIFICATION_BOOSTS` constants
       - unverified: 0
       - partially_verified: 15
       - verified: 35
       - high: 50
-    - [ ] 14.1.3 Implement `calculateCredibility(candidate: Candidate): number`
-  - [ ] 14.2 Create `src/ranking/relevance.ts` with relevance scoring:
-    - [ ] 14.2.1 Implement `calculateRelevance(candidate: Candidate, enrichedIntent: EnrichedIntent): number`
-    - [ ] 14.2.2 Use LLM for relevance assessment if needed
-  - [ ] 14.3 Create `src/ranking/diversity.ts` with diversity scoring:
-    - [ ] 14.3.1 Implement `calculateDiversity(candidate: Candidate, predecessors: Candidate[]): number`
-    - [ ] 14.3.2 Apply -10 points per same-type predecessor
-    - [ ] 14.3.3 Implement `enforceDiversityConstraints(candidates: Candidate[]): Candidate[]`
+    - [x] 14.1.3 Implement `calculateCredibility(candidate: Candidate): number`
+  - [x] 14.2 Create `src/ranking/relevance.ts` with relevance scoring:
+    - [x] 14.2.1 Implement `calculateRelevance(candidate: Candidate, enrichedIntent: EnrichedIntent): number`
+    - [x] 14.2.2 Use LLM for relevance assessment if needed
+  - [x] 14.3 Create `src/ranking/diversity.ts` with diversity scoring:
+    - [x] 14.3.1 Implement `calculateDiversity(candidate: Candidate, predecessors: Candidate[]): number`
+    - [x] 14.3.2 Apply -10 points per same-type predecessor
+    - [x] 14.3.3 Implement `enforceDiversityConstraints(candidates: Candidate[]): Candidate[]`
       - No more than 4 of same type in top 20
       - Balance geography if multiple destinations
-  - [ ] 14.4 Create `src/ranking/scorer.ts` with overall scoring:
-    - [ ] 14.4.1 Implement `calculateOverallScore(candidate: Candidate, context: RankingContext): number`
-    - [ ] 14.4.2 Apply weights: relevance (0.35), credibility (0.30), recency (0.20), diversity (0.15)
-    - [ ] 14.4.3 Cap all scores at 100, floor at 0
-  - [ ] 14.5 Create `src/stages/rank.ts` with stage implementation:
-    - [ ] 14.5.1 Implement `rankStage(candidates: Candidate[], context: StageContext): Promise<Candidate[]>`
-    - [ ] 14.5.2 Score all candidates
-    - [ ] 14.5.3 Sort by overall score descending
-    - [ ] 14.5.4 Write checkpoint to `06_candidates_ranked.json`
-  - [ ] 14.6 Create `src/ranking/index.ts` exporting ranking functions
-  - [ ] 14.7 Write unit tests for ranking
+  - [x] 14.4 Create `src/ranking/scorer.ts` with overall scoring:
+    - [x] 14.4.1 Implement `calculateOverallScore(candidate: Candidate, context: RankingContext): number`
+    - [x] 14.4.2 Apply weights: relevance (0.35), credibility (0.30), recency (0.20), diversity (0.15)
+    - [x] 14.4.3 Cap all scores at 100, floor at 0
+  - [x] 14.5 Create `src/stages/rank.ts` with stage implementation:
+    - [x] 14.5.1 Implement `rankStage(candidates: Candidate[], context: StageContext): Promise<Candidate[]>`
+    - [x] 14.5.2 Score all candidates
+    - [x] 14.5.3 Sort by overall score descending
+    - [x] 14.5.4 Write checkpoint to `06_candidates_ranked.json`
+  - [x] 14.6 Create `src/ranking/index.ts` exporting ranking functions
+  - [x] 14.7 Write unit tests for ranking
 
 ---
 

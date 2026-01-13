@@ -1743,3 +1743,78 @@ All Claude commands (`/startagain`, `/journal`, `/develop`, `/qa`) now use scrip
 **Test Status:** 40 suites passing, 1335 tests, 1 skipped
 
 ---
+
+---
+
+## Session: 2026-01-13 15:45 AEST
+
+### Summary
+Completed Section 14.0 - Ranking Stage with Diversity (Stage 06) for the travel discovery pipeline. Implemented multi-dimensional scoring (relevance, credibility, recency, diversity) with 5 parallel dev agents, wrote 48 comprehensive tests, and fixed a bug in diversity constraint enforcement.
+
+### Work Completed
+- Created `src/ranking/credibility.ts` with ORIGIN_CREDIBILITY (places: 90, web_multi: 80, web_single: 60, youtube: 30-50) and VERIFICATION_BOOSTS (0-50)
+- Created `src/ranking/relevance.ts` with destination, interest, and type-based scoring
+- Created `src/ranking/diversity.ts` with calculateDiversity and enforceDiversityConstraints (max 4 same type in top 20)
+- Created `src/ranking/scorer.ts` with weighted scoring (relevance: 0.35, credibility: 0.30, recency: 0.20, diversity: 0.15)
+- Created `src/stages/rank.ts` implementing Stage 06 (candidates_ranked)
+- Created `src/stages/rank/types.ts` with RankStageOutput and statistics types
+- Created `src/ranking/index.ts` with central exports
+- Created `src/ranking/ranking.test.ts` with 48 comprehensive tests
+- All 1383 tests passing
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| VectorDB returning stale Section 8 context | Bypassed VectorDB, used direct TODO/PRD reading | Resolved |
+| Floating point precision in weights sum test | Changed `toBe(1.0)` to `toBeCloseTo(1.0)` | Resolved |
+| enforceDiversityConstraints added deferred candidates within top 20 | Fixed second pass to re-check type constraints for positions < 20 | Resolved |
+
+### Key Decisions
+- Used greedy iterative ranking algorithm in `rankCandidates()` that recalculates diversity at each step
+- Diversity constraint defers candidates exceeding type limit, then adds them back after top 20 positions
+- Recency scoring uses 5 tiers: Fresh (30d), Recent (90d), Moderate (180d), Older (365d), Stale (>1yr)
+
+### Learnings
+- The `enforceDiversityConstraints` function must maintain type tracking across both passes to properly limit types in top 20
+- When all candidates are same type, constraint enforcement gracefully degrades (can't enforce if no alternatives)
+
+### Open Items / Blockers
+- [ ] Section 15.0: Social Validation Stage (Stage 07) - next in pipeline
+
+### Context for Next Session
+Section 14.0 (Ranking) is complete. The pipeline now has stages 00-06 implemented: Enhancement → Router → Workers → Normalize → Dedupe → **Rank**. Next is Section 15.0 (Social Validation Stage 07) which validates YouTube-derived candidates using Perplexity cross-referencing.
+
+---
+
+---
+
+## Session: 2026-01-13 16:53 AEST
+
+### Summary
+QA review of Section 14.0 (Ranking Stage with Diversity / Stage 06). All PRD requirements verified, 0 issues found. Implementation is complete and fully compliant.
+
+### Work Completed
+- Ran QA on Section 14.0 (Ranking Stage with Diversity)
+- Verified all 9 implementation files against PRD Section 14
+- Confirmed PRD compliance: ORIGIN_CREDIBILITY, VERIFICATION_BOOSTS, scoring weights, diversity penalty, max same type constraints
+- Validated 48 ranking tests pass (1383 total tests pass)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| None found | N/A | N/A |
+
+### Key Decisions
+- Section 14 marked as PASS - no fixes required
+
+### Learnings
+- Ranking module uses multi-dimensional scoring: relevance (35%), credibility (30%), recency (20%), diversity (15%)
+- Diversity constraint: max 4 same-type items in top 20 results, -10 penalty per same-type predecessor
+
+### Open Items / Blockers
+- [ ] Section 15.0: Social Validation Stage (Stage 07) - next in pipeline
+
+### Context for Next Session
+Section 14.0 QA passed with zero issues. The ranking module is complete with all PRD-specified values (credibility scores, verification boosts, weights). Next logical step is Section 15.0 Social Validation Stage.
+
+---
