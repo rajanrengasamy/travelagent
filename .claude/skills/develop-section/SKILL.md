@@ -14,6 +14,11 @@ You are a senior developer implementing features for the Travel Discovery Orches
 
 Implement TODO section: $ARGUMENTS
 
+**Note**: This skill focuses on IMPLEMENTATION ONLY. The parent `/develop` command handles:
+- Updating TODO markdown file (Phase 5)
+- Appending to journal.md (Phase 6)
+- Syncing to VectorDB (Phase 7)
+
 ## Project Context
 
 This is a TypeScript CLI tool with an 11-stage pipeline:
@@ -64,41 +69,13 @@ npx tsx scripts/retrieve-context.ts "Section $ARGUMENTS implementation"
 
 #### Step 1.3: Get Detailed Section Tasks
 
-**RUN THIS** to get detailed TODO items for the section:
+**RUN THIS** to get the specific TODO items for the section:
 
 ```bash
-npx tsx -e "
-import 'dotenv/config';
-import { getCurrentTodoState, queryPrdSections } from './src/context/retrieval.js';
-
-const todo = await getCurrentTodoState();
-const section = todo?.sections.find(s =>
-  s.sectionId.includes('$ARGUMENTS') ||
-  s.name.toLowerCase().includes('$ARGUMENTS'.toLowerCase())
-);
-
-if (section) {
-  console.log('=== SECTION TODO STATE ===');
-  console.log('Name:', section.name);
-  console.log('Completion:', section.completionPct + '%');
-  console.log('Tasks:');
-  section.items.forEach(item => {
-    const checkbox = item.completed ? '[x]' : '[ ]';
-    console.log('  ' + checkbox + ' ' + item.id + ': ' + item.description);
-  });
-} else {
-  console.log('Section not found. Available sections:');
-  todo?.sections.forEach(s => console.log('  - ' + s.sectionId + ': ' + s.name));
-}
-
-console.log('\n=== RELEVANT PRD SECTIONS ===');
-const prd = await queryPrdSections('Section $ARGUMENTS implementation requirements', 3);
-prd.forEach(p => {
-  console.log('\n### ' + p.title);
-  console.log(p.content.substring(0, 1500) + '...');
-});
-"
+npx tsx scripts/get-todo-section.ts "$ARGUMENTS"
 ```
+
+This returns the full section data including all items and completion status.
 
 ### 2. Understand Requirements
 
@@ -107,7 +84,7 @@ From the VectorDB output (NOT from reading files directly):
 2. Identify requirements from relevant PRD sections
 3. Identify all files to create/modify
 
-### 3. Plan Work
+### 3. Plan Work (5 Parallel Agents)
 
 Break the section into 5 parallel workstreams:
 
@@ -119,7 +96,7 @@ Break the section into 5 parallel workstreams:
 
 Adjust based on what the section requires.
 
-### 4. Execute
+### 4. Execute (PARALLEL)
 
 Spawn 5 dev agents in parallel using the Task tool.
 
@@ -158,18 +135,51 @@ After all 5 agents complete:
 2. Verify integration:
    - Check files don't conflict
    - Verify imports work together
-   - Run `npx tsc --noEmit` for full type check
-3. Run tests: `npm test`
-4. Update TODO:
-   - Mark completed tasks as [x] in `todo/tasks-phase0-travel-discovery.md`
+3. Run full verification:
+   ```bash
+   npm run build && npm test 2>&1 | tail -30
+   ```
+4. Note any failures for the report
 
-### 6. Report
+### 6. Report (Return to Parent)
 
-Provide summary:
-- Files created/modified
-- Summary of implementation
-- Tests passing/failing
-- Any issues or follow-up needed
+Provide a structured summary for the parent `/develop` command:
+
+```
+## Section $ARGUMENTS Implementation Complete
+
+### Files Created
+| File | Description |
+|------|-------------|
+| [path] | [description] |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| [path] | [description] |
+
+### Test Results
+- New tests: [count]
+- Total tests: [count]
+- Status: PASS / FAIL
+
+### Verification
+- TypeScript build: PASS / FAIL
+- Tests: PASS / FAIL
+
+### Issues Encountered
+| Issue | Resolution |
+|-------|------------|
+| [problem] | [how resolved] |
+
+### Completed TODO Items
+List all items from Section $ARGUMENTS that were implemented:
+- 20.1 Create src/triage/manager.ts ✓
+- 20.2 Create src/triage/matcher.ts ✓
+- etc.
+```
+
+**Note**: Do NOT update the TODO markdown file. The parent `/develop` command handles that.
 
 ---
 
@@ -180,6 +190,8 @@ Provide summary:
 3. ❌ Using Read tool on `journal.md`
 4. ❌ Skipping the `npx tsx scripts/retrieve-context.ts` step
 5. ❌ "Seeing" code examples but not actually running them with Bash
+6. ❌ Updating TODO markdown (parent handles this)
+7. ❌ Writing journal entries (parent handles this)
 
 **The retrieval script exists. Run it.**
 

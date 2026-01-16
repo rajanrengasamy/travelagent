@@ -123,7 +123,7 @@ Display results and confirm with user via `AskUserQuestion`.
 
 ---
 
-## Phase 3: Execute Development
+## Phase 3: Execute Development (5 Parallel Agents)
 
 ### For Single Section or Feature
 
@@ -139,7 +139,7 @@ The skill handles:
 - Context retrieval from VectorDB (via script execution)
 - Spawning 5 parallel dev agents
 - Consolidation and verification
-- TODO updates
+- Build and test validation
 
 ### For Multiple Parallel Sections
 
@@ -162,45 +162,219 @@ Each runs in forked context with Opus 4.5.
 After skill(s) complete:
 
 1. Collect summaries from each invocation
-2. Present consolidated report:
+2. Verify integration:
+   - Check files don't conflict
+   - Verify imports work together
+3. Run final verification:
+   ```bash
+   npm run build && npm test 2>&1 | tail -20
+   ```
+4. Present consolidated report:
    - Files created/modified per section
    - Tests passing/failing
    - Any issues encountered
-3. List queued sections if any were sequential
 
 ---
 
-## Phase 5: Journal (MANDATORY)
+## Phase 5: Update TODO Markdown File (MANDATORY - SOURCE OF TRUTH)
 
-**You MUST run /journal before completing.**
+**After successful implementation, update the TODO markdown file:**
 
+The markdown file is the **source of truth**. VectorDB syncs from it.
+
+1. Read the section to find the line numbers:
+   ```bash
+   grep -n "\[ \] $ARGUMENTS\." todo/tasks-phase0-travel-discovery.md | head -20
+   ```
+2. Mark completed items as `[x]` using Edit tool
+
+Example edit pattern:
 ```
-Skill tool:
-skill: "journal"
+Edit tool:
+file_path: "todo/tasks-phase0-travel-discovery.md"
+old_string: "- [ ] 20.1 Create `src/triage/manager.ts`"
+new_string: "- [x] 20.1 Create `src/triage/manager.ts`"
+```
+
+**Update ALL completed items** - do not leave incomplete markers for finished work.
+
+---
+
+## Phase 6: Append Journal to Markdown (MANDATORY - SOURCE OF TRUTH)
+
+**The markdown journal is the source of truth. Append the entry first.**
+
+```bash
+cat >> journal.md << 'EOF'
+
+---
+
+## Session: [DATE] [TIME AEST]
+
+### Summary
+Implemented Section $ARGUMENTS - [brief description of what was built]
+
+### Work Completed
+- Created [file1.ts] - [description]
+- Created [file2.ts] - [description]
+- Added [X] unit tests - all passing
+- Build passes, [total] tests pass
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| [Problem encountered] | [How it was solved] | Resolved |
+
+### Key Decisions
+- [Decision made and rationale]
+
+### Learnings
+- [Technical insight discovered]
+
+### Open Items / Blockers
+- [ ] [Any follow-up needed]
+
+### Context for Next Session
+[Where things stand, recommended next steps]
+
+---
+EOF
+echo "Journal entry appended to journal.md"
+```
+
+---
+
+## Phase 7: Sync to VectorDB (MANDATORY)
+
+**After updating markdown files, sync to VectorDB for semantic search.**
+
+The VectorDB reads from the updated markdown files, ensuring consistency.
+
+### Step 7.1: Check VectorDB Available
+
+```bash
+ls ~/.travelagent/context/lancedb/ 2>/dev/null && echo "VectorDB: AVAILABLE" || echo "VectorDB: NOT FOUND"
+```
+
+**If NOT FOUND**: Skip to completion. Run `npm run seed-context` later.
+
+### Step 7.2: Create Journal JSON for VectorDB
+
+```bash
+cat > /tmp/journal-entry.json << 'EOF'
+{
+  "summary": "Implemented Section $ARGUMENTS - [brief description]",
+  "content": "[Detailed description of what was implemented, files created, issues resolved]",
+  "topics": ["section-$ARGUMENTS", "implementation", "other-relevant-topics"],
+  "workCompleted": [
+    "Created [file1]",
+    "Created [file2]",
+    "Added [X] unit tests",
+    "All tests passing"
+  ],
+  "openItems": [
+    "Any follow-up items if applicable"
+  ]
+}
+EOF
+```
+
+### Step 7.3: Store in VectorDB
+
+```bash
+npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json
+```
+
+This stores:
+- Journal entry with embeddings
+- Session summary for `/startagain`
+- **TODO state snapshot** (from the now-updated markdown file)
+
+### Step 7.4: Cleanup
+
+```bash
+rm /tmp/journal-entry.json 2>/dev/null
 ```
 
 ---
 
 ## Execution Checklist
 
-- [ ] **VectorDB check passed** (ls command showed AVAILABLE)
-- [ ] **Retrieval script executed** (npx tsx scripts/retrieve-context.ts)
-- [ ] **DID NOT read raw markdown files**
-- [ ] Arguments parsed (single vs multi-section)
-- [ ] Dependency analysis (if multi-section)
-- [ ] develop-section skill(s) invoked
-- [ ] Results consolidated
-- [ ] Summary provided to user
-- [ ] **MANDATORY: /journal invoked**
+- [ ] **Phase 0**: VectorDB check passed
+- [ ] **Phase 0**: Retrieval script executed
+- [ ] **Phase 0**: DID NOT read raw markdown files (during retrieval)
+- [ ] **Phase 1**: Arguments parsed
+- [ ] **Phase 2**: Dependency analysis (if multi-section)
+- [ ] **Phase 3**: develop-section skill(s) invoked (5 agents)
+- [ ] **Phase 4**: Results consolidated, build/tests verified
+- [ ] **Phase 5**: TODO markdown updated with [x] markers (SOURCE OF TRUTH)
+- [ ] **Phase 6**: Journal appended to journal.md (SOURCE OF TRUTH)
+- [ ] **Phase 7**: VectorDB synced (journal + TODO snapshot)
+
+---
+
+## Data Flow: Markdown → VectorDB
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               SOURCE OF TRUTH: Markdown Files                │
+├─────────────────────────────────────────────────────────────┤
+│  todo/tasks-phase0-travel-discovery.md                      │
+│  journal.md                                                  │
+│  docs/phase_0_prd_unified.md                                │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼ (sync via scripts)
+┌─────────────────────────────────────────────────────────────┐
+│               DERIVED INDEX: VectorDB                        │
+├─────────────────────────────────────────────────────────────┤
+│  ~/.travelagent/context/lancedb/                            │
+│    ├── todo_snapshots.lance (from markdown)                 │
+│    ├── journal_entries.lance (from markdown)                │
+│    ├── session_summaries.lance (derived)                    │
+│    └── prd_sections.lance (from markdown)                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Execution Flow Summary
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    /develop $ARGUMENTS                       │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 0: VectorDB Context Retrieval                         │
+│    └─→ Scripts: retrieve-context.ts, get-todo-section.ts    │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 1-2: Parse Args & Dependency Analysis                 │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 3: Execute (5 Parallel Dev Agents)                    │
+│    └─→ Skill: develop-section                               │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 4: Consolidate & Verify (build + tests)               │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 5: Update TODO Markdown (SOURCE OF TRUTH)             │
+│    └─→ Mark completed items as [x]                          │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 6: Append Journal to Markdown (SOURCE OF TRUTH)       │
+│    └─→ cat >> journal.md                                    │
+├─────────────────────────────────────────────────────────────┤
+│ Phase 7: Sync to VectorDB                                   │
+│    └─→ store-journal-entry.ts                               │
+│    └─→ (snapshots TODO from updated markdown)               │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Common Mistakes to AVOID
 
-1. ❌ Using Read tool on `todo/tasks-phase0-travel-discovery.md`
-2. ❌ Using Read tool on `docs/phase_0_prd_unified.md`
-3. ❌ Using Read tool on `journal.md`
-4. ❌ Skipping the `npx tsx scripts/retrieve-context.ts` step
-5. ❌ "Seeing" code examples but not actually running them with Bash
+1. ❌ Using Read tool on markdown files during Phase 0 retrieval
+2. ❌ Skipping the `npx tsx scripts/retrieve-context.ts` step
+3. ❌ Forgetting to update TODO markdown after implementation
+4. ❌ Storing to VectorDB BEFORE updating markdown files
+5. ❌ Skipping the VectorDB sync step (Phase 7)
+6. ❌ Not marking all completed items as [x] in TODO
 
-**The retrieval script exists. Run it.**
+**Remember: Markdown is source of truth. VectorDB syncs from it.**

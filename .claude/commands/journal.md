@@ -3,6 +3,29 @@ Reflect on the current session and create a journal entry. This serves as a retr
 > **CRITICAL**: Do NOT use `npx tsx -e "..."` for inline TypeScript execution.
 > It fails due to ESM/CJS incompatibility. Always use the storage script.
 
+## Data Flow: Markdown → VectorDB
+
+**Markdown files are the SOURCE OF TRUTH. VectorDB syncs from them.**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               SOURCE OF TRUTH: Markdown Files                │
+├─────────────────────────────────────────────────────────────┤
+│  journal.md (append first)                                   │
+│  todo/tasks-phase0-travel-discovery.md                       │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼ (sync via scripts)
+┌─────────────────────────────────────────────────────────────┐
+│               DERIVED INDEX: VectorDB                        │
+├─────────────────────────────────────────────────────────────┤
+│  ~/.travelagent/context/lancedb/                            │
+│    ├── journal_entries.lance                                │
+│    ├── session_summaries.lance                              │
+│    └── todo_snapshots.lance                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## Instructions
 
 ### Step 1: Review the Session
@@ -50,7 +73,9 @@ Create a journal entry following this structure:
 ---
 ```
 
-### Step 3: Append to journal.md
+### Step 3: Append to journal.md (SOURCE OF TRUTH - DO THIS FIRST)
+
+**The markdown file is the source of truth. Write here first.**
 
 Use bash heredoc to append the entry:
 
@@ -80,9 +105,9 @@ echo "Journal entry appended to journal.md"
 ls ~/.travelagent/context/lancedb/ 2>/dev/null && echo "VectorDB: AVAILABLE" || echo "VectorDB: NOT FOUND"
 ```
 
-If **NOT FOUND**: Skip to the end. The entry in journal.md will be indexed later via `npm run seed-context`.
+If **NOT FOUND**: Stop here. The entry in journal.md is saved. Run `npm run seed-context` later to index.
 
-### Step 5: Store in VectorDB
+### Step 5: Sync to VectorDB
 
 If VectorDB is available, create a JSON file and run the storage script:
 
@@ -111,7 +136,7 @@ The script handles:
 - Embedding generation via OpenAI
 - Storing journal entry in `journal_entries` collection
 - Storing session summary in `session_summaries` collection
-- Snapshotting current TODO state
+- **Snapshotting current TODO state** (reads from markdown file)
 
 ### Step 6: Cleanup
 
@@ -119,27 +144,38 @@ The script handles:
 rm /tmp/journal-entry.json 2>/dev/null
 ```
 
+## Execution Order (IMPORTANT)
+
+```
+1. journal.md      ← WRITE FIRST (source of truth)
+2. VectorDB check  ← Check availability
+3. VectorDB sync   ← Sync from markdown (if available)
+4. Cleanup         ← Remove temp files
+```
+
 ## Quick Reference
 
 | Step | Command |
 |------|---------|
+| Append to markdown | `cat >> journal.md << 'EOF' ... EOF` |
 | Check VectorDB | `ls ~/.travelagent/context/lancedb/` |
-| Store entry | `npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json` |
-| Seed VectorDB | `npm run seed-context` |
+| Sync to VectorDB | `npx tsx scripts/store-journal-entry.ts /tmp/journal-entry.json` |
+| Full re-index | `npm run seed-context` |
 
 ## File Locations
 
 | File | Location | Purpose |
 |------|----------|---------|
-| journal.md | Project root | Human-readable backup |
-| journal_entries.lance | `~/.travelagent/context/lancedb/` | Full entries with embeddings |
+| journal.md | Project root | **SOURCE OF TRUTH** - Human-readable journal |
+| journal_entries.lance | `~/.travelagent/context/lancedb/` | Derived index with embeddings |
 | session_summaries.lance | `~/.travelagent/context/lancedb/` | Condensed for /startagain |
-| store-journal-entry.ts | `scripts/` | VectorDB storage script |
+| store-journal-entry.ts | `scripts/` | VectorDB sync script |
 
 ## Behavior
 
 - **If journal.md exists**: Append new entry at the end
 - **If journal.md doesn't exist**: Create it with header and first entry
+- **If VectorDB unavailable**: Journal is still saved in markdown (can sync later)
 - **Tone**: Concise, factual, future-oriented
 - **Focus**: Capture enough context for seamless session resumption
 
@@ -151,20 +187,22 @@ rm /tmp/journal-entry.json 2>/dev/null
 This file maintains session history for continuity across Claude Code sessions.
 Use alongside `todo/tasks-phase0-travel-discovery.md` (task list) and `docs/phase_0_prd_unified.md` (PRD) when starting new sessions.
 
-> Note: Entries are also stored in VectorDB for semantic retrieval via `/startagain`.
+> Note: Entries are also indexed in VectorDB for semantic retrieval via `/startagain`.
 ```
 
 ## Fallback Behavior
 
 If VectorDB is unavailable:
-1. The journal.md entry is still saved (human-readable backup)
-2. Run `npm run seed-context` later to index existing entries
-3. The seed script will parse journal.md and populate VectorDB
+1. The journal.md entry is still saved (source of truth preserved)
+2. Run `npm run seed-context` later to index all entries
+3. The seed script parses journal.md and populates VectorDB
+
+**Markdown is always the source of truth. VectorDB is a derived index.**
 
 ## Example Session
 
 ```bash
-# 1. Append entry to journal.md
+# 1. FIRST: Append entry to journal.md (source of truth)
 cat >> journal.md << 'EOF'
 
 ---
@@ -198,11 +236,12 @@ Auth is working. Rate limiting in place. Next: add response headers.
 
 ---
 EOF
+echo "Journal entry appended to journal.md"
 
-# 2. Check VectorDB
+# 2. Check VectorDB availability
 ls ~/.travelagent/context/lancedb/
 
-# 3. Store in VectorDB (if available)
+# 3. Sync to VectorDB (if available)
 cat > /tmp/journal-entry.json << 'EOF'
 {
   "summary": "Fixed authentication bug in login flow. Added rate limiting to API endpoints.",

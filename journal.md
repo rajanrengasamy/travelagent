@@ -1818,3 +1818,640 @@ QA review of Section 14.0 (Ranking Stage with Diversity / Stage 06). All PRD req
 Section 14.0 QA passed with zero issues. The ranking module is complete with all PRD-specified values (credibility scores, verification boosts, weights). Next logical step is Section 15.0 Social Validation Stage.
 
 ---
+
+---
+
+## Session: 2026-01-14 18:20 AEST
+
+### Summary
+Implemented Section 15.0 - Social Validation Stage (Stage 07). Created validation module using Perplexity Sonar API to verify YouTube-derived candidates. All 1422 tests pass with 38 new validation tests.
+
+### Work Completed
+- Created `src/validation/prompts.ts` with VALIDATION_PROMPT template and batch validation support
+- Created `src/validation/validator.ts` with CandidateValidator class, 3s timeout, retry logic
+- Created `src/stages/validate.ts` implementing TypedStage<RankStageOutput, ValidateStageOutput>
+- Created `src/stages/validate/types.ts` with ValidateStageStats and output schemas
+- Created `src/validation/index.ts` barrel exports
+- Created `src/validation/validation.test.ts` with 38 comprehensive unit tests
+- Updated `src/stages/index.ts` to export validateStage
+- Marked all Section 15.0 TODO items complete
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| VectorDB section lookup didn't find 15.0 | Used grep to find TODO items directly | Resolved |
+| Understanding selective validation scope | Identified trust hierarchy pattern - only YouTube needs verification | Resolved |
+
+### Key Decisions
+- **Only validate YouTube candidates**: Places API and Perplexity Worker have authoritative sources; YouTube transcript extraction is "hearsay" needing external verification
+- **Top N = min(10, youtube_count)**: Per PRD FR6 requirement
+- **Concurrency limit of 3**: Balances speed with API rate limits
+- **3-second timeout per validation**: PRD requirement, returns `unverified` on timeout
+
+### Learnings
+- **Trust hierarchy pattern**: Different data sources have different credibility levels. YouTube candidates come from LLM-extracted transcript content (hearsay), while Places API candidates have authoritative Google data. Validation only applies to lower-credibility sources.
+- **Stage output pattern**: Each stage follows TypedStage<Input, Output> interface with createStageMetadata() for consistent checkpoint structure
+
+### Open Items / Blockers
+- [ ] Section 16.0: Top Candidates Stage (Stage 08) - select top N candidates for aggregator
+- [ ] Sections 17-18: Aggregator and Results stages
+
+### Context for Next Session
+Stage 07 (Validation) is complete and QA-ready. The pipeline now has Stages 00-07 implemented. Next logical step is Section 16.0 (Top Candidates - Stage 08) which selects the top N ranked and validated candidates for the aggregator. The validation module provides status updates to candidates which will influence final selection and presentation.
+
+---
+
+---
+
+## Session: 2026-01-15 17:30 AEST
+
+### Summary
+Ran QA review on Section 15.0 (Social Validation Stage / Stage 07). The implementation passed with 0 issues found across all 5 QA dimensions. All 1422 tests pass including 38 validation-specific tests.
+
+### Work Completed
+- Executed QA review of Section 15 using VectorDB context retrieval
+- Verified PRD compliance for Stage 07 Social Validation
+- Confirmed all implementation requirements: Perplexity integration, 3s timeout, concurrency control, status handling
+- Created QA report at `docs/Section15-QA-issues.md`
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| None found | N/A | N/A |
+
+### Key Decisions
+- Section 15 marked as fully complete and QA-verified
+
+### Learnings
+- Social Validation stage properly implements exponential backoff with 2 retries for resilient API calls
+- Parallel validation uses concurrency limit of 3 to balance throughput and API rate limits
+
+### Open Items / Blockers
+- [ ] Section 16.0: Top Candidates Stage (Stage 08) - next for implementation
+- [ ] Sections 17-18: Aggregator and Results stages remain
+
+### Context for Next Session
+Section 15 (Social Validation / Stage 07) is complete and QA-verified. The validation module uses Perplexity Sonar API to cross-reference YouTube-derived candidates. All tests pass. Next logical step is Section 16.0 (Top Candidates Stage / Stage 08) which selects final candidates from validated results.
+
+---
+
+---
+
+## Session: 2026-01-15 17:30 AEST
+
+### Summary
+Implemented Section 16.0 - Top Candidates Selection (Stage 08). Created the stage that selects top N candidates (default 30) with diversity constraints for the aggregator. Added 31 unit tests, bringing total to 1453 passing tests.
+
+### Work Completed
+- Created `src/stages/top-candidates/types.ts` with TopCandidatesStageOutput schema and helper functions
+- Created `src/stages/top-candidates/index.ts` for module exports
+- Created `src/stages/top-candidates.ts` with topCandidatesStage implementation
+- Created `src/stages/top-candidates.test.ts` with 31 comprehensive tests
+- Updated `src/stages/index.ts` to export new stage and utilities
+- Leveraged existing `enforceDiversityConstraints()` from ranking module
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| develop-section skill confused about section numbering | Implemented directly using Task agents | Resolved |
+| Name conflict: createEmptyStats used by validate stage | Renamed to createEmptyTopCandidatesStats | Resolved |
+| RunConfig.topN property didn't exist | Used config.limits.maxTopCandidates instead | Resolved |
+| Tests failing: diversity limited to 4 same-type | Updated test helper to create varied types | Resolved |
+| Vitest import in Jest project | Changed to @jest/globals import | Resolved |
+
+### Key Decisions
+- Default topN = 30 (configurable via config.limits.maxTopCandidates)
+- Reuse enforceDiversityConstraints from ranking module (no duplication)
+- Stage 08 checkpoint at `08_top_candidates.json` is key resume point for aggregator testing
+
+### Learnings
+- Diversity enforcement has two layers: soft (scoring penalty) and hard (max 4 same-type in top 20)
+- When testing stages that use diversity constraints, must use varied candidate types to avoid unexpected filtering
+- RunConfig.limits.maxTopCandidates (default 50) vs DEFAULT_TOP_N (30) - stage uses its own default but respects config override
+
+### Open Items / Blockers
+- [ ] Section 17.0: Aggregator Stage (Stage 09) - narrative generation with GPT-5.2
+- [ ] Section 18.0: Results Stage (Stage 10) - generate results.json and results.md
+
+### Context for Next Session
+Pipeline stages 01-08 are now complete. The top candidates selection stage is the **key resume point** for aggregator testing - can resume from `08_top_candidates.json` without re-running earlier stages. Next up: Aggregator Stage (Stage 09) which uses GPT-5.2 to generate narrative from top candidates, then Results Stage (Stage 10) for final output files.
+
+---
+
+---
+
+## Session: 2026-01-15 17:00 AEST
+
+### Summary
+QA review of Section 16.0 (Top Candidates Selection - Stage 08) passed with 94.85/100 (Grade A). No critical or major issues found; only 2 minor observations. All 1452 tests pass, build clean.
+
+### Work Completed
+- Completed QA review of Section 16 using VectorDB context retrieval
+- Generated comprehensive 5-dimension QA report
+- Verified build passes and all 1452 tests pass (31 top-candidates specific)
+- Created QA report: `docs/Section16-QA-issues.md`
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| qa-section skill returned Section 15 results | Used qa-reviewer Task agent instead | Resolved |
+| Jest --run flag not recognized | Used npm test without flag | Resolved |
+
+### Key Decisions
+- Launched qa-reviewer Task agent directly for accurate Section 16 review
+- Classified 2 minor issues as non-blocking (Math.floor safety, test mock typing)
+
+### Learnings
+- The qa-section skill may need section number validation to prevent mismatches
+- VectorDB retrieval scripts provide reliable context for QA reviews
+
+### Open Items / Blockers
+- [ ] Section 17.0: Aggregator Stage (Stage 09)
+- [ ] Section 18.0: Results Stage (Stage 10)
+- [ ] Optional: Address MIN-1 (Math.floor) and MIN-2 (test mock typing) in future cleanup
+
+### Context for Next Session
+Section 16 QA complete and passed. The top-candidates stage correctly implements top N selection (default 30) with diversity constraints. Pipeline stages 01-08 are now complete and QA verified. Next logical step is Section 17 (Aggregator Stage) which consumes the top candidates output.
+
+---
+
+---
+
+## Session: 2026-01-15 17:00 AEST
+
+### Summary
+Implemented Section 17.0 - Aggregator Stage (Stage 09). Created comprehensive aggregator module that generates narrative summaries from validated candidates using GPT-5.2, with full degraded mode support. Added 44 unit tests, bringing total to 1497 passing tests.
+
+### Work Completed
+- Created `src/aggregator/types.ts` with NarrativeOutput, AggregatorOutput schemas and helper functions
+- Created `src/aggregator/prompts.ts` with AGGREGATOR_SYSTEM_PROMPT and buildAggregatorPrompt template
+- Created `src/aggregator/client.ts` with OpenAI chat completion client (20s timeout, retry logic)
+- Created `src/aggregator/narrative.ts` with generateNarrative function
+- Created `src/aggregator/aggregator.ts` with runAggregator (degraded mode, token tracking)
+- Created `src/aggregator/index.ts` module exports
+- Created `src/stages/aggregate.ts` Stage 09 TypedStage implementation
+- Created `src/stages/aggregate/types.ts` and `index.ts` for stage type exports
+- Created `src/aggregator/aggregator.test.ts` with 44 comprehensive tests
+- Modified `src/stages/index.ts` to export aggregateStage
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Unused import error (createEmptyAggregatorStats) | Removed unused import from aggregator.ts | Resolved |
+| Test used invalid candidate types ('restaurant', 'attraction') | Changed to valid types ('place', 'food', 'activity', etc.) | Resolved |
+| Unused createMockStageContext function | Removed from test file | Resolved |
+| TypeScript union type narrowing ('never' error) | Used helper function to properly extract candidates | Resolved |
+
+### Key Decisions
+- Used OpenAI SDK directly for chat completions (consistent with embeddings module pattern)
+- Implemented 20-second timeout per PRD Section 17.3.3
+- Degraded mode returns candidates without narrative (null) when generation fails
+- Narrative structure includes: introduction, sections, highlights, recommendations, conclusion
+- Highlight types: must_see, local_favorite, unique_experience, budget_friendly, luxury
+- Recommendation priorities: high, medium, low
+
+### Learnings
+- TypedStage pattern: `TypedStage<TInput, TOutput>` with execute(context, input) returning StageResult
+- Stage output structure: `{ data, metadata, timing }` with createStageMetadata helper
+- Input union types (e.g., `TopCandidatesStageOutput | Candidate[]`) require Array.isArray check for extraction
+- Valid CandidateType values: 'place', 'activity', 'neighborhood', 'daytrip', 'experience', 'food'
+
+### Open Items / Blockers
+- [ ] Section 18.0: Results Stage (Stage 10) - final stage in pipeline
+
+### Context for Next Session
+Aggregator Stage (Stage 09) is complete. This stage takes top candidates from Stage 08 and generates a narrative summary using GPT-5.2. The stage supports degraded mode (returns raw candidates without narrative if GPT fails). Next step is Section 18.0: Results Stage (Stage 10), which will format the final discovery results for presentation. Pipeline stages 0-9 are now complete.
+
+---
+
+---
+
+## Session: 2026-01-15 19:10 AEST
+
+### Summary
+QA review of Section 17.0 (Aggregator Stage - Stage 09) completed with score 93.5/100 (Grade A). No critical or major issues found. The aggregator implementation with GPT-5.2 narrative generation and degraded mode support is production-ready.
+
+### Work Completed
+- QA review of Section 17 - PASS (93.5/100)
+- Created docs/Section17-QA-issues.md
+- Verified build passes and 1496 tests pass (44 aggregator-specific)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| 1 minor cosmetic issue (task checkboxes) | Noted for tracking | Minor/Open |
+
+### Key Decisions
+- Section 17 APPROVED for integration with Stage 10 (Results)
+- Graceful degradation pattern validated as production-ready
+
+### Learnings
+- AbortController pattern for 20s LLM timeouts cleaner than setTimeout approaches
+- Token usage tracking (prompt_tokens, completion_tokens) essential for cost monitoring
+- Degraded output generation ensures pipeline resilience when LLM fails
+
+### Open Items / Blockers
+- [ ] Section 18.0: Results Stage (Stage 10) - final stage in pipeline
+
+### Context for Next Session
+Section 17 (Aggregator Stage 09) passed QA. All 17.1-17.6 requirements implemented including AGGREGATOR_PROMPT template, generateNarrative(), runAggregator() with GPT-5.2, 20s timeout, degraded mode fallback, and checkpoint to 09_aggregator_output.json. Next: implement Section 18.0 (Results Stage 10) which is the final stage in the discovery pipeline.
+
+---
+
+---
+
+## Session: 2026-01-15 18:45 AEST
+
+### Summary
+QA review of Section 18.0 (Results Stage - Stage 10) completed successfully. Found and fixed 3 major issues and 1 minor issue. Final score improved from 82/100 (Grade B) to 94/100 (Grade A).
+
+### Work Completed
+- Ran QA review on Section 18 - Results Stage (Stage 10) - final pipeline stage
+- Fixed MAJ-1: Added try-catch wrapper to execute method with error context preservation
+- Fixed MAJ-2: Changed export filename from `results.json` to `10_results.json` per PRD convention
+- Fixed MAJ-3: Added `loadWorkerSummary()` function to read worker data from Stage 03 checkpoint
+- Fixed MIN-4: Added URL parsing error handling with 'Unknown' fallback
+- Updated `docs/Section18-QA-issues.md` with PASS status and fix details
+- All tests pass (1596 passed, 1 skipped)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Missing try-catch in execute | Added wrapper with error cause chain | Resolved |
+| Export filename mismatch | Changed to 10_results.json | Resolved |
+| Worker summary empty | Added checkpoint reading function | Resolved |
+| URL parsing could throw | Added try-catch with fallback | Resolved |
+
+### Key Decisions
+- Used `readCheckpointData()` from pipeline/checkpoint module to load worker summaries from Stage 03
+- Graceful degradation: if checkpoint unavailable, return empty array (silent fail with debug log)
+- Preserved error cause chain using `{ cause: error }` for better debugging
+
+### Learnings
+- Pipeline checkpoint reading pattern: attempt → catch → fallback with logging
+- Error context preservation using ES2022 `cause` property
+- PRD-driven checkpoint naming: `{NN}_{stage_name}.json` format
+
+### Open Items / Blockers
+- [ ] None - Section 18 is fully QA'd and approved
+
+### Context for Next Session
+Phase 0 pipeline is now complete through Stage 10 (Results). All stages (15-18) have passed QA:
+- Section 15: Validate Stage (95/100)
+- Section 16: Top Candidates (94.85/100)
+- Section 17: Aggregator Stage (93.5/100)
+- Section 18: Results Stage (94/100)
+
+Next steps would be moving to Phase 1 (Telegram Interface) or integration testing of the full pipeline.
+
+---
+
+---
+
+## Session: 2026-01-15 ~14:00 AEST
+
+### Summary
+Completed implementation of Section 18.0 - Results Stage (Stage 10), the final stage in the 11-stage travel discovery pipeline. This stage transforms AggregatorOutput into DiscoveryResults and exports both JSON and Markdown formats.
+
+### Work Completed
+- Created `src/stages/results.ts` - main TypedStage implementation with `resultsStage`
+- Created `src/stages/results/types.ts` - Zod schemas for ResultsStageOutput, ResultsStageStats, ResultsExportPaths
+- Created `src/stages/results/export.ts` - exportResultsJson(), exportResultsMd() with atomic writes, generateMarkdownReport() pure function
+- Created `src/stages/results/index.ts` - module re-exports
+- Created `src/stages/results.test.ts` - 100+ unit tests for all components
+- Updated `src/stages/index.ts` to export resultsStage and results utilities
+- Marked Sections 16.0, 17.0, and 18.0 as complete in TODO file
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| StageContext missing workerSummary property | Added loadWorkerSummary() to read from Stage 03 checkpoint | Resolved |
+| StageContext missing pipelineStartTime | Used stage start time for duration calculation | Resolved |
+| StageContext missing outputDir | Constructed path from context.dataDir following storage layout | Resolved |
+| Test file had unused imports (beforeEach, afterEach) | Removed unused imports | Resolved |
+| Forgot to update TODO file after implementation | Updated sections 16, 17, 18 as complete | Resolved |
+
+### Key Decisions
+- Used `src/stages/results/` structure instead of spec'd `src/results/` to follow existing stage patterns
+- Export paths use PRD Section 13 layout: `{dataDir}/sessions/{sessionId}/runs/{runId}/exports/`
+- Worker summary loaded from Stage 03 checkpoint with graceful fallback to empty array
+- Atomic writes (temp file + rename) for both JSON and Markdown exports
+
+### Learnings
+- TypedStage interface provides compile-time type safety but Stage interface uses unknown for heterogeneous collections
+- StageContext is minimal by design - stages should use checkpoint reading for cross-stage data
+- Path helpers in storage/paths.ts use getDataDir() internally which may differ from context.dataDir
+
+### Open Items / Blockers
+- [ ] Section 19.0 - Cost Tracking System (next section to implement)
+- [ ] Section 20.0 - Triage System
+
+### Context for Next Session
+Results Stage (Stage 10) is complete - this is the final pipeline stage. All 11 stages (00-10) now have implementations. The pipeline can process from enhancement through to final results export. Next logical step is implementing Section 19.0 (Cost Tracking) to enable cost reporting in results, or Section 20.0 (Triage System) for user workflow.
+
+---
+
+---
+
+## Session: 2026-01-15 22:56 AEST
+
+### Summary
+Implemented Section 19.0 - Cost Tracking System, adding comprehensive usage accumulation, cost calculation, and CLI display functionality. Created 7 files (2,345 lines) with 71 tests all passing.
+
+### Work Completed
+- Created `src/cost/tracker.ts` - CostTrackerImpl class with dual interface (WorkerCostTracker + PipelineCostTracker)
+- Created `src/cost/calculator.ts` - Cost calculation functions with per-stage breakdown support
+- Created `src/cost/display.ts` - CLI table formatting per PRD Section 9.3
+- Created `src/cost/index.ts` - Barrel exports for clean imports
+- Created `src/cost/tracker.test.ts` - 355 lines of tracker tests
+- Created `src/cost/calculator.test.ts` - 260 lines of calculator tests
+- Created `src/cost/display.test.ts` - 293 lines of display tests
+- All 71 new tests passing, all 1,667 project tests passing
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| None encountered | Clean implementation | Resolved |
+
+### Key Decisions
+- Dual interface design: CostTrackerImpl implements both WorkerCostTracker (provider-specific methods) and PipelineCostTracker (generic methods)
+- Lazy cost calculation: Costs computed only when getCost() called, keeping accumulation fast
+- Per-stage tracking: setCurrentStage() enables detailed breakdown by pipeline stage
+
+### Learnings
+- Accumulator pattern keeps hot path lightweight while enabling detailed analysis
+- Multi-provider cost models (tokens vs API calls vs quota units) require flexible tracking
+
+### Open Items / Blockers
+- [ ] Section 20.0 - Triage System (next section to implement)
+- [ ] Integration of CostTracker into pipeline execution
+
+### Context for Next Session
+Cost Tracking System (Section 19.0) is complete. All 11 pipeline stages (00-10) are implemented, and now cost tracking is in place. Next logical step is Section 20.0 (Triage System) for user workflow management, or integrating CostTracker into the pipeline orchestrator to enable actual cost reporting in results.
+
+---
+
+---
+
+## Session: 2026-01-15 22:00 AEST
+
+### Summary
+Implemented Section 20.0 - Triage System with manager, matcher, and comprehensive unit tests. The triage system allows users to categorize candidates as must/research/maybe, with persistence across discovery reruns through title+location hash matching.
+
+### Work Completed
+- Created `src/triage/manager.ts` with high-level triage API (setTriageStatus, getTriageStatus, listTriagedCandidates, clearTriage, removeTriageEntry, listByStatus, getTriageCounts)
+- Created `src/triage/matcher.ts` with candidate matching across runs (generateTitleLocationHash, hashCandidate, matchCandidateAcrossRuns, reconcileTriageState, migrateTriageEntries)
+- Created `src/triage/index.ts` exporting all triage functions and types
+- Created `src/triage/manager.test.ts` with 23 tests for manager functions
+- Created `src/triage/matcher.test.ts` with 27 tests for matcher functions
+- All 50 new triage tests pass, total test count now 1717
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| develop-section skill returned cached results for wrong sections (17, 19) | Implemented Section 20 directly using Task tool approach | Resolved |
+| Test failures due to wrong enum values (CandidateType, CandidateOrigin) | Fixed to use correct values: 'food' not 'restaurant', 'web' not 'perplexity' | Resolved |
+| SourceRef schema missing title/sourceType fields | Updated test to use correct schema: url + retrievedAt only | Resolved |
+
+### Key Decisions
+- Matcher uses SHA-256 hash of normalized title+location (16 char hex) for stable matching
+- Two-strategy matching: exact candidateId first, then hash fallback
+- Triage history retained for removed candidates to allow recovery
+
+### Learnings
+- CandidateTypeSchema values: 'place', 'activity', 'neighborhood', 'daytrip', 'experience', 'food'
+- CandidateOriginSchema values: 'web', 'places', 'youtube' (workers, not providers)
+- SourceRefSchema has url, publisher, retrievedAt, snippet (no title or sourceType)
+
+### Open Items / Blockers
+- [ ] Section 19.0 - Cost Tracking System may need verification (skill reported completion but should validate)
+- [ ] Update TODO file to mark Section 20.x items as complete
+
+### Context for Next Session
+Section 20.0 Triage System is fully implemented and tested. The manager provides high-level API for triage operations, while the matcher handles candidate identity across discovery reruns using title+location hashing. All 1717 tests pass. Next sections to consider: verify Section 19 completion or move to Phase 1 (Telegram Interface).
+
+---
+
+---
+
+## Session: 2026-01-16 00:45 AEST
+
+### Summary
+Implemented Section 21.0 - Export Functionality with bundle creation and ZIP archive support.
+
+### Work Completed
+- Created `src/export/bundler.ts` - Export bundle creation with configurable options (488 lines)
+- Created `src/export/zip.ts` - ZIP archive creation using archiver library (275 lines)
+- Created `src/export/index.ts` - Module exports with convenience `exportSession` function (82 lines)
+- Created `src/export/bundler.test.ts` - Bundler unit tests (27 tests)
+- Created `src/export/zip.test.ts` - ZIP archive unit tests (24 tests)
+- Installed `archiver` npm package for cross-platform ZIP support
+- All 51 new export tests passing
+- Total test count: 1768 tests passing
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Jest ESM worker isolation causing module-scoped beforeAll failures | Changed to per-test setup with helper function | Resolved |
+| `fileExists` returning false for directories | Fixed createZipArchive to check directory existence correctly | Resolved |
+| Bundle timestamp collisions in tests | Added millisecond precision to bundle directory names | Resolved |
+
+### Key Decisions
+- Bundle manifests include file category, size, and relative paths for verification
+- Default files always included: results.json, results.md, triage.json, session.json, cost.json
+- Optional stages/ and raw/ directories controlled via ExportOptions flags
+- ZIP compression level configurable (0-9, default 6)
+
+### Learnings
+- Jest with ts-jest ESM preset has module isolation issues with beforeAll/afterAll
+- The storage `fileExists` function specifically checks for files, not directories
+- archiver library uses Node.js streams for efficient ZIP creation
+
+### Open Items / Blockers
+- [ ] Section 22.0 - CLI Framework Setup (next section)
+
+### Context for Next Session
+Export functionality complete. The module provides:
+- `createExportBundle()` - Creates bundle directory with session data
+- `createZipArchive()` - Creates compressed ZIP from bundle
+- `exportSession()` - Convenience function combining both operations
+Ready to move on to CLI Framework setup in Section 22.
+
+---
+
+---
+
+## Session: 2026-01-16 15:30 AEST
+
+### Summary
+Performed QA review of Section 20 (Triage System). All 13 TODO items verified complete, 62 tests passing, and 5-dimension assessment passed. Created comprehensive QA report.
+
+### Work Completed
+- QA reviewed Section 20 - Triage System implementation
+- Verified all files: `src/triage/manager.ts`, `matcher.ts`, `index.ts`, and tests
+- Verified storage layer: `src/storage/triage.ts`, `src/schemas/triage.ts`
+- Ran TypeScript build (passed) and 62 triage tests (all passed)
+- Created QA report: `docs/Section20-QA-issues.md`
+- Verified TODO items 20.1.1-20.5 all complete
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| qa-section skill returned Section 15 instead of 20 | Performed manual QA review directly | Resolved |
+
+### Key Decisions
+- Section 20 passes all QA checks with no issues found
+- Implementation exceeds TODO requirements with additional utility functions (removeTriageEntry, listByStatus, getTriageCounts, migrateTriageEntries, reconcileTriageState)
+
+### Learnings
+- Triage matcher uses two-strategy matching: exact candidateId first, then SHA256(title\|location) hash fallback. This ensures triage persists even when pipeline re-runs generate different candidateIds.
+- The reconcileTriageState() function is the key integration point for restoring triage after re-runs
+
+### Open Items / Blockers
+- [ ] None - Section 20 is fully complete
+
+### Context for Next Session
+Section 20 (Triage System) QA complete. The triage module provides a robust API for categorizing candidates as must/research/maybe with persistence across pipeline re-runs via hash-based matching. Ready to proceed with QA on other sections.
+
+---
+
+---
+
+## Session: 2026-01-16 15:30 AEST
+
+### Summary
+Completed QA review for Section 21.0 (Export Functionality). All 51 tests pass, TypeScript build clean, and implementation fully compliant with PRD/TODO requirements. Created comprehensive QA report with PASS status.
+
+### Work Completed
+- Retrieved VectorDB context for Section 21 QA review
+- Reviewed `src/export/bundler.ts` (510 lines) - bundle creation, validation, listing, deletion
+- Reviewed `src/export/zip.ts` (343 lines) - ZIP archive creation, extraction, validation
+- Reviewed `src/export/index.ts` (92 lines) - convenience wrapper exportSession()
+- Ran export module tests (51 tests, all passing)
+- Verified TypeScript build (no errors)
+- Created `docs/Section21-QA-issues.md` with PASS status
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| qa-section skill returned wrong section (15 instead of 21) | Performed manual QA review instead | Resolved |
+| get-todo-section.ts couldn't find "21" | Used grep to extract section from TODO file | Resolved |
+
+### Key Decisions
+- Manual QA review provides more thorough coverage than automated skill when skill misbehaves
+
+### Learnings
+- Export module has comprehensive test coverage (51 tests)
+- Bundle validation checks for ZIP magic bytes (PK signature)
+- archiver library used for cross-platform ZIP support
+
+### Open Items / Blockers
+- [ ] Section 22.0 - CLI Framework Setup (next section to implement)
+- [ ] Investigate qa-section skill returning wrong section number
+
+### Context for Next Session
+Section 21.0 Export Functionality is complete with full QA pass. All 12 TODO subtasks verified complete. Implementation includes bundle creation, ZIP archives, validation, and comprehensive tests. Ready to proceed with Section 22.0 CLI Framework Setup.
+
+---
+
+---
+
+## Session: 2026-01-16 17:05 AEST
+
+### Summary
+Implemented Section 22 - CLI Framework Setup with commander-based CLI architecture, progress formatters, and run summary formatters
+
+### Work Completed
+- Created src/cli/index.ts - Main CLI entry point with commander program setup
+- Created src/cli/version.ts - Version constant and helper function
+- Created src/cli/base-command.ts - Base command class with global options (--verbose, --quiet), logging, and exit codes
+- Created src/cli/commands/index.ts - Command registry with placeholder commands (discover, session, run, config, export)
+- Created src/cli/formatters/progress.ts - ProgressSpinner class (ora-based) and StageProgressDisplay class
+- Created src/cli/formatters/run-summary.ts - formatRunSummary, formatDegradedRunSummary, formatResumeRunSummary
+- Created src/cli/formatters/index.ts - Re-export module for formatters
+- Created src/cli/cli.test.ts - 45 smoke tests covering all CLI components
+- Modified package.json - Added bin entry for `travel` command pointing to ./dist/cli/index.js
+- Build passes, 1813 tests pass
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| formatQuickSummary check order | Changed logic to check degradedStages.length > 0 before result.success since success can be true with degraded stages | Resolved |
+| CLI framework choice | Chose commander over oclif as it's lighter weight per TODO item 22.1.2 | Resolved |
+
+### Key Decisions
+- Used commander.js instead of oclif (lighter weight, fits project needs)
+- Implemented BaseCommand class pattern for shared CLI behavior
+- Used ora for terminal spinners with fallback support
+- Created comprehensive progress and summary formatters matching PRD specs
+
+### Learnings
+- Commander provides clean subcommand patterns with minimal boilerplate
+- BaseCommand class pattern allows consistent --verbose/--quiet handling across all commands
+- Progress display needs careful handling of terminal capabilities (ora spinner vs plain text fallback)
+
+### Open Items / Blockers
+- [ ] Section 23 - CLI Session Commands (next section)
+
+### Context for Next Session
+CLI Framework (Section 22) is complete. The project now has:
+- A `travel` CLI entry point via package.json bin
+- BaseCommand class for shared CLI behavior
+- Progress spinner and stage display formatters
+- Run summary formatters (standard, degraded, resume)
+- 45 CLI smoke tests all passing
+
+Next step: Implement Section 23 (CLI Session Commands) to add actual session management commands.
+
+---
+
+---
+
+## Session: 2026-01-16 18:00 AEST
+
+### Summary
+Implemented Section 23 - CLI Session Commands with sessions:create, sessions:list, sessions:view, and sessions:archive commands
+
+### Work Completed
+- Created src/cli/commands/sessions/create.ts (487 lines) - Full sessions:create command with all flags (--prompt, --skip-enhancement, --enhancement-model, --auto-enhance, --destination, --dates, --flexibility, --interests, --constraint, --seed-from, --seed-file, --title)
+- Created src/cli/commands/sessions/list.ts (264 lines) - Sessions list with table display, --archived, --limit, --format options
+- Created src/cli/commands/sessions/view.ts (303 lines) - Session details with enhancement info and run history
+- Created src/cli/commands/sessions/archive.ts (112 lines) - Soft-delete via archivedAt
+- Created src/cli/commands/sessions/index.ts (37 lines) - Command registration
+- Created src/cli/commands/sessions/sessions.test.ts (500 lines) - 26 comprehensive tests
+- Modified src/cli/commands/index.ts - Integrated real session commands
+- Build passes, 1838 tests pass (25 new tests)
+
+### Issues & Resolutions
+| Issue | Resolution | Status |
+|:------|:-----------|:-------|
+| Unused import EnhancementConfigSchema | Removed unused import | Resolved |
+| Unused function formatDateRange | Removed unused function | Resolved |
+| Unused type import Session in view.ts | Removed unused import | Resolved |
+| Test checking .args property incorrectly | Fixed test to use registeredArguments | Resolved |
+
+### Key Decisions
+- Used commander's .command().action() pattern for clean subcommand registration
+- Implemented table formatting inline rather than external dependency (keeps CLI lightweight)
+- Interactive enhancement flow uses readline for user prompts
+- All flags documented with .description() for --help output
+
+### Learnings
+- Commander's .allowUnknownOption() useful for pass-through flags
+- Table formatting with fixed-width columns needs careful string padding
+- Session commands form the foundation for pipeline execution
+
+### Open Items / Blockers
+- [ ] Section 24 - CLI Run Commands (next section)
+
+### Context for Next Session
+CLI Session Commands (Section 23) complete. The project now has:
+- sessions:create with 12+ flags for session configuration
+- sessions:list with table format and filtering
+- sessions:view for detailed session inspection
+- sessions:archive for soft deletion
+- 26 new tests all passing
+
+Next step: Implement Section 24 (CLI Run Commands) for pipeline execution.
+
+---

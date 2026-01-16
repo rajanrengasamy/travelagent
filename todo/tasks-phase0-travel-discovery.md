@@ -759,204 +759,204 @@ Update the file after completing each sub-task, not just after completing an ent
 
 ---
 
-- [ ] **15.0 Social Validation Stage (Stage 07)**
-  - [ ] 15.1 Create `src/validation/prompts.ts` with validation prompts:
-    - [ ] 15.1.1 Create `VALIDATION_PROMPT` template for Perplexity validation
-    - [ ] 15.1.2 Include place name, claimed location, and verification request
-  - [ ] 15.2 Create `src/validation/validator.ts` with validation logic:
-    - [ ] 15.2.1 Implement `validateCandidate(candidate: Candidate): Promise<ValidationResult>`
-    - [ ] 15.2.2 Call Perplexity to verify:
+- [x] **15.0 Social Validation Stage (Stage 07)**
+  - [x] 15.1 Create `src/validation/prompts.ts` with validation prompts:
+    - [x] 15.1.1 Create `VALIDATION_PROMPT` template for Perplexity validation
+    - [x] 15.1.2 Include place name, claimed location, and verification request
+  - [x] 15.2 Create `src/validation/validator.ts` with validation logic:
+    - [x] 15.2.1 Implement `validateCandidate(candidate: Candidate): Promise<ValidationResult>`
+    - [x] 15.2.2 Call Perplexity to verify:
       - Place existence
       - Correct location
       - No obvious closure or mismatch
-    - [ ] 15.2.3 Implement 3-second timeout per validation
-    - [ ] 15.2.4 Handle timeout/error as `unverified`
-    - [ ] 15.2.5 Parse validation response into status:
+    - [x] 15.2.3 Implement 3-second timeout per validation
+    - [x] 15.2.4 Handle timeout/error as `unverified`
+    - [x] 15.2.5 Parse validation response into status:
       - `verified` - All claims confirmed
       - `partially_verified` - Some claims confirmed
       - `conflict_detected` - Information contradicts sources
       - `unverified` - Could not validate
-  - [ ] 15.3 Create `src/stages/validate.ts` with stage implementation:
-    - [ ] 15.3.1 Implement `validateStage(candidates: Candidate[], context: StageContext): Promise<Candidate[]>`
-    - [ ] 15.3.2 Identify YouTube-derived candidates
-    - [ ] 15.3.3 Select top N for validation: `min(10, youtube_count)`
-    - [ ] 15.3.4 Run validations in parallel with concurrency limit
-    - [ ] 15.3.5 Update candidate validation field with status, notes, sources
-    - [ ] 15.3.6 Skip if no YouTube candidates present
-    - [ ] 15.3.7 Write checkpoint to `07_candidates_validated.json`
-  - [ ] 15.4 Create `src/validation/index.ts` exporting validation functions
-  - [ ] 15.5 Write unit tests for validation
+  - [x] 15.3 Create `src/stages/validate.ts` with stage implementation:
+    - [x] 15.3.1 Implement `validateStage(candidates: Candidate[], context: StageContext): Promise<Candidate[]>`
+    - [x] 15.3.2 Identify YouTube-derived candidates
+    - [x] 15.3.3 Select top N for validation: `min(10, youtube_count)`
+    - [x] 15.3.4 Run validations in parallel with concurrency limit
+    - [x] 15.3.5 Update candidate validation field with status, notes, sources
+    - [x] 15.3.6 Skip if no YouTube candidates present
+    - [x] 15.3.7 Write checkpoint to `07_candidates_validated.json`
+  - [x] 15.4 Create `src/validation/index.ts` exporting validation functions
+  - [x] 15.5 Write unit tests for validation
 
 ---
 
-- [ ] **16.0 Top Candidates Selection (Stage 08)**
-  - [ ] 16.1 Create `src/stages/top-candidates.ts` with selection logic:
-    - [ ] 16.1.1 Implement `topCandidatesStage(candidates: Candidate[], context: StageContext): Promise<Candidate[]>`
-    - [ ] 16.1.2 Select top N candidates (default 30, configurable)
-    - [ ] 16.1.3 Enforce diversity constraints during selection
-    - [ ] 16.1.4 This is the **key resume point** for aggregator testing
-    - [ ] 16.1.5 Write checkpoint to `08_top_candidates.json`
-  - [ ] 16.2 Write unit tests for top candidates selection
+- [x] **16.0 Top Candidates Selection (Stage 08)** ✅ COMPLETE
+  - [x] 16.1 Create `src/stages/top-candidates.ts` with selection logic:
+    - [x] 16.1.1 Implement `topCandidatesStage` as TypedStage
+    - [x] 16.1.2 Select top N candidates (default 30, configurable via limits.maxTopCandidates)
+    - [x] 16.1.3 Enforce diversity constraints during selection
+    - [x] 16.1.4 This is the **key resume point** for aggregator testing
+    - [x] 16.1.5 Write checkpoint to `08_top_candidates.json`
+  - [x] 16.2 Write unit tests for top candidates selection
 
 ---
 
-- [ ] **17.0 Aggregator Stage (Stage 09)**
-  - [ ] 17.1 Create `src/aggregator/prompts.ts` with aggregator prompts:
-    - [ ] 17.1.1 Create `AGGREGATOR_PROMPT` template for narrative generation
-    - [ ] 17.1.2 Include candidate data, session context, and output format instructions
-  - [ ] 17.2 Create `src/aggregator/narrative.ts` with narrative generation:
-    - [ ] 17.2.1 Implement `generateNarrative(candidates: Candidate[], session: Session): Promise<NarrativeOutput>`
-    - [ ] 17.2.2 Structure output with sections, highlights, and recommendations
-  - [ ] 17.3 Create `src/aggregator/aggregator.ts` with main logic:
-    - [ ] 17.3.1 Implement `runAggregator(candidates: Candidate[], context: StageContext): Promise<AggregatorOutput>`
-    - [ ] 17.3.2 Call GPT-5.2 with aggregator prompt
-    - [ ] 17.3.3 Implement 20-second timeout
-    - [ ] 17.3.4 Implement degraded mode: return raw candidates without narrative on failure
-    - [ ] 17.3.5 Track token usage
-  - [ ] 17.4 Create `src/stages/aggregate.ts` with stage implementation:
-    - [ ] 17.4.1 Implement `aggregateStage(candidates: Candidate[], context: StageContext): Promise<AggregatorOutput>`
-    - [ ] 17.4.2 Write checkpoint to `09_aggregator_output.json`
-  - [ ] 17.5 Create `src/aggregator/index.ts` exporting aggregator functions
-  - [ ] 17.6 Write unit tests for aggregator with mocked LLM
+- [x] **17.0 Aggregator Stage (Stage 09)** ✅ COMPLETE
+  - [x] 17.1 Create `src/aggregator/prompts.ts` with aggregator prompts:
+    - [x] 17.1.1 Create `AGGREGATOR_PROMPT` template for narrative generation
+    - [x] 17.1.2 Include candidate data, session context, and output format instructions
+  - [x] 17.2 Create `src/aggregator/narrative.ts` with narrative generation:
+    - [x] 17.2.1 Implement `generateNarrative()` for narrative generation
+    - [x] 17.2.2 Structure output with sections, highlights, and recommendations
+  - [x] 17.3 Create `src/aggregator/aggregator.ts` with main logic:
+    - [x] 17.3.1 Implement `runAggregator(candidates, options): Promise<AggregatorOutput>`
+    - [x] 17.3.2 Call LLM with aggregator prompt
+    - [x] 17.3.3 Implement 20-second timeout (AGGREGATOR_TIMEOUT_MS)
+    - [x] 17.3.4 Implement degraded mode: `createDegradedOutput()` returns raw candidates on failure
+    - [x] 17.3.5 Track token usage via CostTracker
+  - [x] 17.4 Create `src/stages/aggregate.ts` with stage implementation:
+    - [x] 17.4.1 Implement `aggregateStage` as TypedStage<TopCandidatesStageOutput, AggregatorOutput>
+    - [x] 17.4.2 Write checkpoint to `09_aggregator_output.json`
+  - [x] 17.5 Create `src/aggregator/index.ts` exporting aggregator functions
+  - [x] 17.6 Write unit tests for aggregator with mocked LLM
 
 ---
 
-- [ ] **18.0 Results Generation (Stage 10)**
-  - [ ] 18.1 Create `src/results/templates.ts` with markdown templates:
-    - [ ] 18.1.1 Create `RESULTS_MD_TEMPLATE` based on PRD Appendix B
-    - [ ] 18.1.2 Include sections for: Summary, Top Picks, By Category, Sources, Validation Notes
-  - [ ] 18.2 Create `src/results/json-builder.ts` with JSON generation:
-    - [ ] 18.2.1 Implement `buildResultsJson(aggregatorOutput: AggregatorOutput, context: StageContext): DiscoveryResults`
-    - [ ] 18.2.2 Include all candidates, clusters, workerSummary, degradation info
-    - [ ] 18.2.3 Set schemaVersion
-  - [ ] 18.3 Create `src/results/markdown-builder.ts` with markdown generation:
-    - [ ] 18.3.1 Implement `buildResultsMd(results: DiscoveryResults, session: Session): string`
-    - [ ] 18.3.2 Format candidates with titles, summaries, sources
-    - [ ] 18.3.3 Include validation status indicators
-    - [ ] 18.3.4 Mark conflicts and unverified items clearly
-  - [ ] 18.4 Create `src/stages/results.ts` with stage implementation:
-    - [ ] 18.4.1 Implement `resultsStage(aggregatorOutput: AggregatorOutput, context: StageContext): Promise<void>`
-    - [ ] 18.4.2 Generate `results.json` and save to `exports/10_results.json`
-    - [ ] 18.4.3 Generate `results.md` and save to `exports/results.md`
-    - [ ] 18.4.4 Write `cost.json` with cost breakdown
-    - [ ] 18.4.5 Update session's `lastRunId`
-  - [ ] 18.5 Create `src/results/index.ts` exporting results functions
-  - [ ] 18.6 Write unit tests for results generation
+- [x] **18.0 Results Generation (Stage 10)** ✅ COMPLETE
+  - [x] 18.1 Create `src/stages/results/export.ts` with markdown generation:
+    - [x] 18.1.1 Create `generateMarkdownReport()` pure function
+    - [x] 18.1.2 Include sections for: Summary, Top Picks, Highlights, Recommendations, Statistics
+  - [x] 18.2 Create `src/stages/results/export.ts` with JSON generation:
+    - [x] 18.2.1 Implement `exportResultsJson()` with atomic writes
+    - [x] 18.2.2 Include all candidates, workerSummary, degradation info
+    - [x] 18.2.3 Set schemaVersion from discovery-results.ts
+  - [x] 18.3 Create `src/stages/results/export.ts` with markdown export:
+    - [x] 18.3.1 Implement `exportResultsMd()` with atomic writes
+    - [x] 18.3.2 Format candidates with titles, summaries, sources
+    - [x] 18.3.3 Include validation status indicators
+    - [x] 18.3.4 Mark conflicts and unverified items clearly
+  - [x] 18.4 Create `src/stages/results.ts` with stage implementation:
+    - [x] 18.4.1 Implement `resultsStage` as TypedStage<AggregatorOutput, ResultsStageOutput>
+    - [x] 18.4.2 Generate `10_results.json` and save to `exports/`
+    - [x] 18.4.3 Generate `results.md` and save to `exports/`
+    - [x] 18.4.4 Load worker summary from Stage 03 checkpoint
+    - [x] 18.4.5 Handle degraded mode when narrative is null
+  - [x] 18.5 Create `src/stages/results/index.ts` exporting results functions
+  - [x] 18.6 Write unit tests in `src/stages/results.test.ts` (100+ tests)
 
 ---
 
-- [ ] **19.0 Cost Tracking System**
-  - [ ] 19.1 Create `src/cost/tracker.ts` with usage accumulator:
-    - [ ] 19.1.1 Implement `CostTracker` class
-    - [ ] 19.1.2 Implement `addTokenUsage(provider: string, input: number, output: number)`
-    - [ ] 19.1.3 Implement `addApiCalls(provider: string, calls: number)`
-    - [ ] 19.1.4 Implement `addQuotaUnits(provider: string, units: number)` for YouTube
-    - [ ] 19.1.5 Track usage per stage for detailed breakdown
-  - [ ] 19.2 Create `src/cost/calculator.ts` with cost calculation:
-    - [ ] 19.2.1 Implement `calculateCosts(tracker: CostTracker): CostBreakdown`
-    - [ ] 19.2.2 Apply token costs per provider from config
-    - [ ] 19.2.3 Apply API call costs for Places
-    - [ ] 19.2.4 Calculate total cost
-  - [ ] 19.3 Create `src/cost/display.ts` with CLI display:
-    - [ ] 19.3.1 Implement `formatCostBreakdown(breakdown: CostBreakdown): string`
-    - [ ] 19.3.2 Format as per PRD Section 9.3 CLI Cost Display
-    - [ ] 19.3.3 Show per-provider breakdown and total
-  - [ ] 19.4 Create `src/cost/index.ts` exporting cost functions
-  - [ ] 19.5 Write unit tests for cost tracking
+- [x] **19.0 Cost Tracking System**
+  - [x] 19.1 Create `src/cost/tracker.ts` with usage accumulator:
+    - [x] 19.1.1 Implement `CostTracker` class
+    - [x] 19.1.2 Implement `addTokenUsage(provider: string, input: number, output: number)`
+    - [x] 19.1.3 Implement `addApiCalls(provider: string, calls: number)`
+    - [x] 19.1.4 Implement `addQuotaUnits(provider: string, units: number)` for YouTube
+    - [x] 19.1.5 Track usage per stage for detailed breakdown
+  - [x] 19.2 Create `src/cost/calculator.ts` with cost calculation:
+    - [x] 19.2.1 Implement `calculateCosts(tracker: CostTracker): CostBreakdown`
+    - [x] 19.2.2 Apply token costs per provider from config
+    - [x] 19.2.3 Apply API call costs for Places
+    - [x] 19.2.4 Calculate total cost
+  - [x] 19.3 Create `src/cost/display.ts` with CLI display:
+    - [x] 19.3.1 Implement `formatCostBreakdown(breakdown: CostBreakdown): string`
+    - [x] 19.3.2 Format as per PRD Section 9.3 CLI Cost Display
+    - [x] 19.3.3 Show per-provider breakdown and total
+  - [x] 19.4 Create `src/cost/index.ts` exporting cost functions
+  - [x] 19.5 Write unit tests for cost tracking
 
 ---
 
-- [ ] **20.0 Triage System**
-  - [ ] 20.1 Create `src/triage/manager.ts` with triage state management:
-    - [ ] 20.1.1 Implement `setTriageStatus(sessionId: string, candidateId: string, status: TriageStatus, notes?: string)`
-    - [ ] 20.1.2 Implement `getTriageStatus(sessionId: string, candidateId: string): TriageEntry | null`
-    - [ ] 20.1.3 Implement `listTriagedCandidates(sessionId: string): TriageEntry[]`
-    - [ ] 20.1.4 Implement `clearTriage(sessionId: string)`
-    - [ ] 20.1.5 Update `updatedAt` timestamp on changes
-  - [ ] 20.2 Create `src/triage/matcher.ts` with candidate matching:
-    - [ ] 20.2.1 Implement `matchCandidateAcrossRuns(candidateId: string, titleHash: string): string | null`
-    - [ ] 20.2.2 First try matching by `candidateId`
-    - [ ] 20.2.3 Fallback to title + location hash matching
-  - [ ] 20.3 Implement triage persistence rules:
-    - [ ] 20.3.1 Triage persists across discovery reruns
-    - [ ] 20.3.2 New candidates from re-runs start with no triage status
-    - [ ] 20.3.3 Removed candidates retain triage history for recovery
-  - [ ] 20.4 Create `src/triage/index.ts` exporting triage functions
-  - [ ] 20.5 Write unit tests for triage system
+- [x] **20.0 Triage System**
+  - [x] 20.1 Create `src/triage/manager.ts` with triage state management:
+    - [x] 20.1.1 Implement `setTriageStatus(sessionId: string, candidateId: string, status: TriageStatus, notes?: string)`
+    - [x] 20.1.2 Implement `getTriageStatus(sessionId: string, candidateId: string): TriageEntry | null`
+    - [x] 20.1.3 Implement `listTriagedCandidates(sessionId: string): TriageEntry[]`
+    - [x] 20.1.4 Implement `clearTriage(sessionId: string)`
+    - [x] 20.1.5 Update `updatedAt` timestamp on changes
+  - [x] 20.2 Create `src/triage/matcher.ts` with candidate matching:
+    - [x] 20.2.1 Implement `matchCandidateAcrossRuns(candidateId: string, titleHash: string): string | null`
+    - [x] 20.2.2 First try matching by `candidateId`
+    - [x] 20.2.3 Fallback to title + location hash matching
+  - [x] 20.3 Implement triage persistence rules:
+    - [x] 20.3.1 Triage persists across discovery reruns
+    - [x] 20.3.2 New candidates from re-runs start with no triage status
+    - [x] 20.3.3 Removed candidates retain triage history for recovery
+  - [x] 20.4 Create `src/triage/index.ts` exporting triage functions
+  - [x] 20.5 Write unit tests for triage system
 
 ---
 
-- [ ] **21.0 Export Functionality**
-  - [ ] 21.1 Create `src/export/bundler.ts` with bundle creation:
-    - [ ] 21.1.1 Implement `createExportBundle(sessionId: string, options: ExportOptions): Promise<string>`
-    - [ ] 21.1.2 Always include: `results.json`, `results.md`, `triage.json`, `session.json`, `cost.json`
-    - [ ] 21.1.3 Optionally include `stages/` with `--include-stages` flag
-    - [ ] 21.1.4 Optionally include `raw/` (worker outputs) with `--include-raw` flag
-    - [ ] 21.1.5 Create export directory with session ID and timestamp
-  - [ ] 21.2 Create `src/export/zip.ts` with ZIP archive:
-    - [ ] 21.2.1 Install `archiver` npm package
-    - [ ] 21.2.2 Implement `createZipArchive(bundlePath: string, outputPath: string): Promise<string>`
-    - [ ] 21.2.3 Support `--zip` flag for ZIP output
-  - [ ] 21.3 Create `src/export/index.ts` exporting export functions
-  - [ ] 21.4 Write unit tests for export functionality
+- [x] **21.0 Export Functionality**
+  - [x] 21.1 Create `src/export/bundler.ts` with bundle creation:
+    - [x] 21.1.1 Implement `createExportBundle(sessionId: string, options: ExportOptions): Promise<string>`
+    - [x] 21.1.2 Always include: `results.json`, `results.md`, `triage.json`, `session.json`, `cost.json`
+    - [x] 21.1.3 Optionally include `stages/` with `--include-stages` flag
+    - [x] 21.1.4 Optionally include `raw/` (worker outputs) with `--include-raw` flag
+    - [x] 21.1.5 Create export directory with session ID and timestamp
+  - [x] 21.2 Create `src/export/zip.ts` with ZIP archive:
+    - [x] 21.2.1 Install `archiver` npm package
+    - [x] 21.2.2 Implement `createZipArchive(bundlePath: string, outputPath: string): Promise<string>`
+    - [x] 21.2.3 Support `--zip` flag for ZIP output
+  - [x] 21.3 Create `src/export/index.ts` exporting export functions
+  - [x] 21.4 Write unit tests for export functionality
 
 ---
 
-- [ ] **22.0 CLI Framework Setup**
-  - [ ] 22.1 Choose and install CLI framework:
-    - [ ] 22.1.1 Install `oclif` and its dependencies
-    - [ ] 22.1.2 Alternative: Use `commander` if oclif is too heavy
-  - [ ] 22.2 Set up CLI project structure:
-    - [ ] 22.2.1 Create `src/cli/index.ts` as entry point
-    - [ ] 22.2.2 Create `src/cli/commands/` directory
-    - [ ] 22.2.3 Configure bin entry in `package.json` as `travel`
-  - [ ] 22.3 Create `src/cli/base-command.ts`:
-    - [ ] 22.3.1 Implement base command class with common flags
-    - [ ] 22.3.2 Add `--verbose` flag for debug output
-    - [ ] 22.3.3 Add `--quiet` flag for minimal output
-    - [ ] 22.3.4 Set up error handling and graceful exit
-  - [ ] 22.4 Create `src/cli/formatters/progress.ts`:
-    - [ ] 22.4.1 Implement progress spinner using `ora`
-    - [ ] 22.4.2 Implement stage progress display (checkmarks, etc.)
-  - [ ] 22.5 Create `src/cli/formatters/run-summary.ts`:
-    - [ ] 22.5.1 Implement run summary formatting (see PRD Section 16.3)
-    - [ ] 22.5.2 Implement degraded run output formatting (see PRD Section 16.5)
-    - [ ] 22.5.3 Implement resume run output formatting (see PRD Section 16.4)
-  - [ ] 22.6 Set up help system and command discovery
-  - [ ] 22.7 Write basic CLI smoke tests
+- [x] **22.0 CLI Framework Setup**
+  - [x] 22.1 Choose and install CLI framework:
+    - [ ] 22.1.1 Install `oclif` and its dependencies (skipped - chose commander)
+    - [x] 22.1.2 Alternative: Use `commander` if oclif is too heavy
+  - [x] 22.2 Set up CLI project structure:
+    - [x] 22.2.1 Create `src/cli/index.ts` as entry point
+    - [x] 22.2.2 Create `src/cli/commands/` directory
+    - [x] 22.2.3 Configure bin entry in `package.json` as `travel`
+  - [x] 22.3 Create `src/cli/base-command.ts`:
+    - [x] 22.3.1 Implement base command class with common flags
+    - [x] 22.3.2 Add `--verbose` flag for debug output
+    - [x] 22.3.3 Add `--quiet` flag for minimal output
+    - [x] 22.3.4 Set up error handling and graceful exit
+  - [x] 22.4 Create `src/cli/formatters/progress.ts`:
+    - [x] 22.4.1 Implement progress spinner using `ora`
+    - [x] 22.4.2 Implement stage progress display (checkmarks, etc.)
+  - [x] 22.5 Create `src/cli/formatters/run-summary.ts`:
+    - [x] 22.5.1 Implement run summary formatting (see PRD Section 16.3)
+    - [x] 22.5.2 Implement degraded run output formatting (see PRD Section 16.5)
+    - [x] 22.5.3 Implement resume run output formatting (see PRD Section 16.4)
+  - [x] 22.6 Set up help system and command discovery
+  - [x] 22.7 Write basic CLI smoke tests
 
 ---
 
-- [ ] **23.0 CLI Session Commands**
-  - [ ] 23.1 Create `src/cli/commands/sessions/create.ts`:
-    - [ ] 23.1.1 Implement `sessions:create` command
-    - [ ] 23.1.2 Add `--prompt` flag for natural language input (triggers enhancement)
-    - [ ] 23.1.3 Add `--skip-enhancement` flag to bypass enhancement
-    - [ ] 23.1.4 Add `--enhancement-model` flag to choose model (gemini, gpt, claude)
-    - [ ] 23.1.5 Add `--auto-enhance` flag to auto-accept first suggestion
-    - [ ] 23.1.6 Add `--destination` flag for direct parameter mode
-    - [ ] 23.1.7 Add `--dates` flag (start and end dates)
-    - [ ] 23.1.8 Add `--flexibility` flag (none, plusMinus:N, monthOnly)
-    - [ ] 23.1.9 Add `--interests` flag (comma-separated)
-    - [ ] 23.1.10 Add `--constraint` flag (repeatable)
-    - [ ] 23.1.11 Add `--seed-from` flag for seeding from prior session/stage
-    - [ ] 23.1.12 Add `--seed-file` flag for seeding from external file
-    - [ ] 23.1.13 Implement interactive enhancement flow with user prompts
-    - [ ] 23.1.14 Display created session ID on success
-  - [ ] 23.2 Create `src/cli/commands/sessions/list.ts`:
-    - [ ] 23.2.1 Implement `sessions:list` command
-    - [ ] 23.2.2 Display sessions in table format with ID, title, created date, last run
-    - [ ] 23.2.3 Add `--archived` flag to show archived sessions
-  - [ ] 23.3 Create `src/cli/commands/sessions/view.ts`:
-    - [ ] 23.3.1 Implement `sessions:view <session_id>` command
-    - [ ] 23.3.2 Display full session details including parameters
-    - [ ] 23.3.3 Display enhancement result if available
-    - [ ] 23.3.4 Display run history
-  - [ ] 23.4 Create `src/cli/commands/sessions/archive.ts`:
-    - [ ] 23.4.1 Implement `sessions:archive <session_id>` command
-    - [ ] 23.4.2 Soft-delete by setting archivedAt
-    - [ ] 23.4.3 Display confirmation message
-  - [ ] 23.5 Write tests for session commands
+- [x] **23.0 CLI Session Commands**
+  - [x] 23.1 Create `src/cli/commands/sessions/create.ts`:
+    - [x] 23.1.1 Implement `sessions:create` command
+    - [x] 23.1.2 Add `--prompt` flag for natural language input (triggers enhancement)
+    - [x] 23.1.3 Add `--skip-enhancement` flag to bypass enhancement
+    - [x] 23.1.4 Add `--enhancement-model` flag to choose model (gemini, gpt, claude)
+    - [x] 23.1.5 Add `--auto-enhance` flag to auto-accept first suggestion
+    - [x] 23.1.6 Add `--destination` flag for direct parameter mode
+    - [x] 23.1.7 Add `--dates` flag (start and end dates)
+    - [x] 23.1.8 Add `--flexibility` flag (none, plusMinus:N, monthOnly)
+    - [x] 23.1.9 Add `--interests` flag (comma-separated)
+    - [x] 23.1.10 Add `--constraint` flag (repeatable)
+    - [x] 23.1.11 Add `--seed-from` flag for seeding from prior session/stage
+    - [x] 23.1.12 Add `--seed-file` flag for seeding from external file
+    - [x] 23.1.13 Implement interactive enhancement flow with user prompts
+    - [x] 23.1.14 Display created session ID on success
+  - [x] 23.2 Create `src/cli/commands/sessions/list.ts`:
+    - [x] 23.2.1 Implement `sessions:list` command
+    - [x] 23.2.2 Display sessions in table format with ID, title, created date, last run
+    - [x] 23.2.3 Add `--archived` flag to show archived sessions
+  - [x] 23.3 Create `src/cli/commands/sessions/view.ts`:
+    - [x] 23.3.1 Implement `sessions:view <session_id>` command
+    - [x] 23.3.2 Display full session details including parameters
+    - [x] 23.3.3 Display enhancement result if available
+    - [x] 23.3.4 Display run history
+  - [x] 23.4 Create `src/cli/commands/sessions/archive.ts`:
+    - [x] 23.4.1 Implement `sessions:archive <session_id>` command
+    - [x] 23.4.2 Soft-delete by setting archivedAt
+    - [x] 23.4.3 Display confirmation message
+  - [x] 23.5 Write tests for session commands
 
 ---
 
